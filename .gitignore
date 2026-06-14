@@ -1,0 +1,20 @@
+# Dependências do Node.js — nunca versionar esta pasta
+node_modules/
+
+# Logs gerados em runtime
+*.log
+npm-debug.log*
+
+# Variáveis de ambiente sensíveis
+.env
+.env.local
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
