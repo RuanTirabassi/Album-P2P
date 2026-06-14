@@ -4,6 +4,11 @@
  * Armazena o estado global compartilhado entre todos os módulos do nó P2P.
  * Exporta as estruturas de dados centrais usadas pelos handlers, CLI e servidor.
  *
+ * IMPORTANTE: config é exposto como wrapper { data } para que setConfig()
+ * atualize o mesmo objeto referenciado por todos os módulos que já fizeram
+ * require('./state'). Reatribuir a variável local não funciona porque o
+ * module.exports já foi entregue por referência no momento do require.
+ *
  * Usado por: messageHandler.js, handlers/search.js, handlers/tradeOffer.js,
  *            handlers/tradeAccept.js, handlers/searchHit.js, cli.js, server.js
  */
@@ -28,13 +33,19 @@ const pendingResults = new Map();
 // Map de query_id → WebSocket do browser aguardando resposta de busca
 const pendingUISearches = new Map();
 
-// Configuração do próprio nó — preenchida pelo index.js via state.setConfig()
-let config = { peer_id: '', sticker_id: '', sticker_url: '' };
+// Configuração do próprio nó.
+// Usamos um objeto mutável (em vez de reatribuir a variável) para que todos os
+// módulos que já fizeram require('./state') vejam as atualizações feitas por
+// setConfig() — já que o export entrega a referência ao objeto, não um snapshot.
+const config = { peer_id: '', sticker_id: '', sticker_url: '' };
 
-// Salva a configuração do nó no estado global
-// Chamado pelo index.js após carregar o peers.json
+// Salva a configuração do nó no estado global.
+// Copia as propriedades para DENTRO do objeto existente (não reatribui config)
+// para que todos os módulos que guardam referência ao objeto vejam as mudanças.
 function setConfig(cfg) {
-  config = cfg;
+  config.peer_id    = cfg.peer_id    || '';
+  config.sticker_id = cfg.sticker_id || '';
+  config.sticker_url = cfg.sticker_url || '';
 }
 
 // Retorna a lista do inventário no formato esperado pelo dashboard
@@ -66,7 +77,7 @@ module.exports = {
   pendingResults,
   pendingUISearches,
 
-  // Config do nó
+  // Config do nó (objeto mutável — sempre atualizado por setConfig)
   config,
   setConfig,
 
