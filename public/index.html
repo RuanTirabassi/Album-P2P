@@ -30,7 +30,6 @@
       --shadow-glow: 0 0 40px rgba(99,179,237,0.12);
       --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
@@ -49,7 +48,6 @@
         radial-gradient(ellipse 60% 40% at 80% 110%, rgba(159,122,234,0.07) 0%, transparent 60%);
       pointer-events: none; z-index: 0;
     }
-
     .app { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 24px 20px 60px; }
 
     /* HEADER */
@@ -81,7 +79,6 @@
       transition: background 0.3s;
     }
     .ws-dot.connected { background: var(--accent-3); box-shadow: 0 0 6px var(--accent-3); animation: pulse 2s infinite; }
-
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
 
     /* BADGES */
@@ -95,7 +92,6 @@
     .badge-green  { background: rgba(104,211,145,0.12); border-color: rgba(104,211,145,0.25); color: var(--accent-3); }
     .badge-purple { background: rgba(159,122,234,0.12); border-color: rgba(159,122,234,0.25); color: var(--accent-2); }
     .badge-warn   { background: rgba(246,173,85,0.12);  border-color: rgba(246,173,85,0.25);  color: var(--accent-warn); }
-    .badge-red    { background: rgba(252,129,129,0.12); border-color: rgba(252,129,129,0.25); color: var(--accent-danger); }
 
     /* STATS */
     .status-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
@@ -121,11 +117,10 @@
     .stat-value.warn   { color: var(--accent-warn); }
     .stat-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 4px; }
 
-    /* ── PAINEL DE BUSCA P2P ── */
+    /* BUSCA */
     .search-panel {
       background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: 24px;
-      margin-bottom: 28px;
+      border-radius: var(--radius-lg); padding: 24px; margin-bottom: 28px;
     }
     .search-panel h2 {
       font-size: 0.85rem; font-weight: 700; text-transform: uppercase;
@@ -134,18 +129,14 @@
     }
     .search-row { display: flex; gap: 10px; flex-wrap: wrap; }
     .search-input {
-      flex: 1; min-width: 180px;
-      padding: 12px 16px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text-primary);
+      flex: 1; min-width: 180px; padding: 12px 16px;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-primary);
       font-size: 0.95rem; font-family: 'Inter', sans-serif; outline: none;
       transition: var(--transition);
     }
     .search-input::placeholder { color: var(--text-muted); }
     .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,179,237,0.15); }
-
     .btn {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 10px 18px; border-radius: var(--radius-sm);
@@ -153,17 +144,13 @@
       transition: var(--transition); border: 1px solid transparent;
       font-family: 'Inter', sans-serif; white-space: nowrap;
     }
-    .btn-accent {
-      background: rgba(99,179,237,0.15); border-color: rgba(99,179,237,0.3); color: var(--accent);
-    }
+    .btn-accent { background: rgba(99,179,237,0.15); border-color: rgba(99,179,237,0.3); color: var(--accent); }
     .btn-accent:hover { background: rgba(99,179,237,0.25); box-shadow: 0 0 16px rgba(99,179,237,0.2); }
     .btn-accent:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-green  { background: rgba(104,211,145,0.15); border-color: rgba(104,211,145,0.3); color: var(--accent-3); }
     .btn-green:hover  { background: rgba(104,211,145,0.25); }
     .btn-ghost  { background: rgba(255,255,255,0.04); border-color: var(--border); color: var(--text-secondary); }
     .btn-ghost:hover  { background: rgba(255,255,255,0.08); color: var(--text-primary); }
-    .btn-danger { background: rgba(252,129,129,0.15); border-color: rgba(252,129,129,0.3); color: var(--accent-danger); }
-    .btn-danger:hover { background: rgba(252,129,129,0.25); }
 
     /* resultados da busca */
     .search-results { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
@@ -176,15 +163,22 @@
       animation: fadeUp 0.3s ease both;
     }
     .result-sticker-img {
-      width: 56px; height: 56px; border-radius: 10px;
-      object-fit: cover; background: var(--bg-surface);
-      border: 1px solid var(--border); flex-shrink: 0;
+      width: 64px; height: 64px; border-radius: 10px;
+      object-fit: cover;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    /* placeholder enquanto imagem nao carrega */
+    .result-sticker-img.no-img {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: var(--text-muted);
     }
     .result-info { flex: 1; min-width: 0; }
-    .result-id { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
+    .result-id   { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
     .result-peer { font-size: 0.78rem; color: var(--text-secondary); }
-    .result-qty { font-size: 0.78rem; color: var(--accent-3); margin-top: 2px; }
-    .result-local { font-size: 0.7rem; color: var(--accent-warn); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .result-qty  { font-size: 0.78rem; color: var(--accent-3); margin-top: 2px; }
+    .result-local{ font-size: 0.7rem; color: var(--accent-warn); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 
     /* spinner */
     .spinner {
@@ -195,15 +189,15 @@
     .spinner.active { display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* SEÇÕES GRID */
+    /* GRID */
     .sections-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .section-full { grid-column: 1 / -1; }
+    .section-full  { grid-column: 1 / -1; }
     @media (max-width: 768px) {
       .sections-grid { grid-template-columns: 1fr; }
-      .section-full { grid-column: auto; }
+      .section-full  { grid-column: auto; }
     }
-
-    .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; animation: fadeUp 0.4s ease both; }
+    .panel:nth-child(2){animation-delay:.06s} .panel:nth-child(3){animation-delay:.12s} .panel:nth-child(4){animation-delay:.18s}
     .panel-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 20px; border-bottom: 1px solid var(--border);
@@ -215,50 +209,67 @@
     }
     .panel-body { padding: 16px; }
 
-    /* INVENTÁRIO */
-    .sticker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
-    .sticker-card {
-      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-      border-radius: var(--radius-md); padding: 16px 12px;
-      text-align: center; cursor: default; transition: var(--transition);
-      position: relative; overflow: hidden;
-    }
-    .sticker-card::after {
-      content: ''; position: absolute; inset: 0;
-      background: radial-gradient(circle at 50% 0%, rgba(99,179,237,0.08) 0%, transparent 70%);
-      opacity: 0; transition: var(--transition);
-    }
-    .sticker-card:hover { border-color: var(--border-accent); transform: translateY(-3px); box-shadow: var(--shadow-glow); }
-    .sticker-card:hover::after { opacity: 1; }
-    .sticker-card.zero { opacity: 0.4; }
-    .sticker-card.own  { border-color: rgba(99,179,237,0.3); background: rgba(99,179,237,0.06); }
-    .sticker-emoji { font-size: 28px; margin-bottom: 8px; display: block; filter: drop-shadow(0 2px 8px rgba(99,179,237,0.3)); }
-    .sticker-id { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; color: var(--text-primary); margin-bottom: 4px; }
-    .sticker-qty { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
-    .qty-good  { color: var(--accent-3); } .qty-mid { color: var(--accent); }
-    .qty-low   { color: var(--accent-warn); } .qty-zero { color: var(--text-muted); }
-    .sticker-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-top: 2px; }
-    .own-pill {
-      position: absolute; top: 6px; right: 6px;
-      font-size: 0.55rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--accent); background: rgba(99,179,237,0.15);
-      padding: 2px 6px; border-radius: 999px; border: 1px solid rgba(99,179,237,0.25);
-    }
-
-    /* filter local no inventário */
+    /* ===== INVENTÁRIO ===== */
     .inv-filter {
-      margin-bottom: 14px;
-      padding: 10px 14px;
-      width: 100%;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text-primary);
+      margin-bottom: 14px; padding: 10px 14px; width: 100%;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-primary);
       font-size: 0.88rem; font-family: 'Inter', sans-serif; outline: none;
       transition: var(--transition);
     }
     .inv-filter::placeholder { color: var(--text-muted); }
     .inv-filter:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,179,237,0.12); }
+
+    .sticker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .sticker-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 12px;
+      text-align: center; cursor: default; transition: var(--transition);
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .sticker-card:hover { border-color: var(--border-accent); transform: translateY(-3px); box-shadow: var(--shadow-glow); }
+    .sticker-card.zero  { opacity: 0.45; }
+    .sticker-card.own   { border-color: rgba(99,179,237,0.35); background: rgba(99,179,237,0.05); }
+
+    /* imagem real da figurinha no card */
+    .sticker-img-wrap {
+      width: 100%; aspect-ratio: 3/4;
+      border-radius: 8px; overflow: hidden;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .sticker-img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    .sticker-card:hover .sticker-img { transform: scale(1.04); }
+    /* fallback quando PNG ainda nao existe */
+    .sticker-img-fallback {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 6px; font-size: 32px; color: var(--text-muted);
+    }
+    .sticker-img-fallback span { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .sticker-id  { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.05em; color: var(--text-primary); }
+    .sticker-qty { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+    .qty-good { color: var(--accent-3); } .qty-mid { color: var(--accent); }
+    .qty-low  { color: var(--accent-warn); } .qty-zero { color: var(--text-muted); }
+    .sticker-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+    .own-pill {
+      position: absolute; top: 6px; right: 6px;
+      font-size: 0.52rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--accent); background: rgba(99,179,237,0.18);
+      padding: 2px 6px; border-radius: 999px; border: 1px solid rgba(99,179,237,0.3);
+      z-index: 1;
+    }
 
     /* PEERS */
     .peer-list { display: flex; flex-direction: column; gap: 8px; }
@@ -276,7 +287,7 @@
       font-size: 14px; flex-shrink: 0;
     }
     .peer-info { flex: 1; min-width: 0; }
-    .peer-id { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .peer-id   { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .peer-host { font-size: 0.72rem; color: var(--text-secondary); font-family: monospace; margin-top: 1px; }
     .peer-status { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-3); box-shadow: 0 0 6px var(--accent-3); flex-shrink: 0; }
 
@@ -289,19 +300,14 @@
       transition: var(--transition);
     }
     .trade-item:hover { background: var(--bg-card-hover); }
-    .trade-icon {
-      width: 34px; height: 34px; border-radius: 9px;
-      background: rgba(104,211,145,0.15);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; flex-shrink: 0;
-    }
+    .trade-icon { width: 34px; height: 34px; border-radius: 9px; background: rgba(104,211,145,0.15); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
     .trade-info { flex: 1; min-width: 0; }
     .trade-desc { font-size: 0.83rem; font-weight: 500; color: var(--text-primary); }
     .trade-desc .gave { color: var(--accent-danger); } .trade-desc .got { color: var(--accent-3); }
     .trade-meta { font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px; }
     .trade-time { font-size: 0.68rem; color: var(--text-muted); white-space: nowrap; font-family: monospace; flex-shrink: 0; }
 
-    /* EMPTY STATE */
+    /* EMPTY */
     .empty-state { text-align: center; padding: 32px 16px; color: var(--text-muted); }
     .empty-state-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
     .empty-state-text { font-size: 0.82rem; }
@@ -323,13 +329,6 @@
       flex-wrap: wrap; gap: 8px; font-size: 0.72rem; color: var(--text-muted);
     }
 
-    /* SKELETON */
-    .skeleton {
-      background: linear-gradient(90deg, var(--bg-card) 25%, rgba(255,255,255,0.06) 50%, var(--bg-card) 75%);
-      background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm);
-    }
-    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-
     /* TOAST */
     #toast {
       position: fixed; bottom: 24px; right: 24px;
@@ -341,13 +340,11 @@
       transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       z-index: 1000; max-width: 340px;
     }
-    #toast.show { transform: translateY(0); opacity: 1; }
-    #toast.error { border-color: rgba(252,129,129,0.4); color: var(--accent-danger); }
-    #toast.success { border-color: rgba(104,211,145,0.4); color: var(--accent-3); }
+    #toast.show   { transform: translateY(0); opacity: 1; }
+    #toast.error  { border-color: rgba(252,129,129,0.4);  color: var(--accent-danger); }
+    #toast.success{ border-color: rgba(104,211,145,0.4);  color: var(--accent-3); }
 
     @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-    .panel { animation: fadeUp 0.4s ease both; }
-    .panel:nth-child(2){animation-delay:.06s} .panel:nth-child(3){animation-delay:.12s} .panel:nth-child(4){animation-delay:.18s}
   </style>
 </head>
 <body>
@@ -359,7 +356,7 @@
       <div class="logo">🎴</div>
       <div class="brand-text">
         <h1>Album P2P</h1>
-        <p id="headerSub">Sistemas Distribuídos — Dashboard</p>
+        <p>Sistemas Distribuídos — Dashboard</p>
       </div>
     </div>
     <div class="header-meta">
@@ -367,17 +364,15 @@
         <span class="ws-dot" id="wsDot"></span>
         <span id="wsStatus">conectando…</span>
       </span>
-      <span class="badge badge-blue" id="peerBadge">
-        <span id="peerIdLabel">—</span>
-      </span>
+      <span class="badge badge-blue">👤 <span id="peerIdLabel">—</span></span>
       <span class="badge badge-purple">🎴 <span id="stickerIdLabel">—</span></span>
-      <button class="btn btn-ghost" id="refreshBtn" onclick="requestStatus()">⟳ Atualizar</button>
+      <button class="btn btn-ghost" onclick="requestStatus()">&#8635; Atualizar</button>
     </div>
   </header>
 
   <!-- ERRO DE CONEXÃO -->
   <div class="conn-error" id="connError">
-    ⚠️ Sem conexão WebSocket — verifique se <code>node src/index.js</code> está rodando na porta 8080.
+    ⚠️ Sem conexão WebSocket — verifique se <code>node src/index.js</code> está rodando.
   </div>
 
   <!-- STATS -->
@@ -404,14 +399,12 @@
     </div>
   </div>
 
-  <!-- ── PAINEL DE BUSCA P2P ── -->
+  <!-- BUSCA P2P -->
   <div class="search-panel">
     <h2>🔍 Busca P2P na Rede</h2>
     <div class="search-row">
       <input
-        class="search-input"
-        id="p2pSearchInput"
-        type="text"
+        class="search-input" id="p2pSearchInput" type="text"
         placeholder="Ex: FIG-07"
         onkeydown="if(event.key==='Enter') startSearch()"
       />
@@ -424,7 +417,7 @@
     <div class="search-results" id="searchResults"></div>
   </div>
 
-  <!-- SEÇÕES GRID -->
+  <!-- GRID -->
   <div class="sections-grid">
 
     <!-- INVENTÁRIO -->
@@ -434,7 +427,8 @@
         <span class="badge badge-blue" id="inventoryCount">0 figurinhas</span>
       </div>
       <div class="panel-body">
-        <input class="inv-filter" id="invFilter" type="text" placeholder="Filtrar… ex: FIG-07" oninput="filterInventory()" />
+        <input class="inv-filter" id="invFilter" type="text"
+          placeholder="Filtrar… ex: FIG-07" oninput="filterInventory()" />
         <div class="sticker-grid" id="stickerGrid"></div>
       </div>
     </div>
@@ -465,7 +459,7 @@
 
   <footer class="footer">
     <span>Album P2P &mdash; Sistemas Distribuídos</span>
-    <span>Última atualização: <span id="lastUpdate">—</span></span>
+    <span>Atualizado: <span id="lastUpdate">—</span></span>
     <span>WebSocket em tempo real</span>
   </footer>
 </div>
@@ -474,16 +468,43 @@
 
 <script>
   // ─── Estado local ────────────────────────────────────────────────────────────
-  let ws = null;
-  let allInventory = [];
-  let currentData = null;
-  let ownSticker = '';
-  let toastTimer = null;
+  let ws            = null;
+  let allInventory  = [];
+  let ownSticker    = '';
+  let ownStickerUrl = '';
+  let toastTimer    = null;
   let reconnectTimer = null;
+
+  // ─── Helpers de URL da figurinha ────────────────────────────────────────────
+  // Dado um sticker_id (FIG-24) tenta construir a URL do PNG.
+  // Se o servidor tiver sticker_url no status, usa ela.
+  // Para figurinhas de outros peers, usa a URL que veio no SEARCH_HIT.
+  const stickerUrlCache = {}; // sticker_id -> url conhecida
+
+  function getStickerUrl(stickerId, fallbackUrl) {
+    if (fallbackUrl) { stickerUrlCache[stickerId] = fallbackUrl; }
+    if (stickerUrlCache[stickerId]) return stickerUrlCache[stickerId];
+    // Assume que está na própria instância (figurinha autoral)
+    return `/images/${stickerId}.png`;
+  }
+
+  // Cria o HTML de imagem da figurinha com fallback elegante
+  function stickerImgHtml(stickerId, url) {
+    const src = getStickerUrl(stickerId, url);
+    return `
+      <div class="sticker-img-wrap">
+        <img
+          class="sticker-img"
+          src="${src}"
+          alt="${stickerId}"
+          loading="lazy"
+          onerror="this.parentElement.innerHTML='<div class=sticker-img-fallback>🎴<span>${stickerId}</span></div>'"
+        />
+      </div>`;
+  }
 
   // ─── WebSocket ───────────────────────────────────────────────────────────────
   function connect() {
-    // Conecta com subprotocolo 'ui' para que o server.js identifique como browser
     ws = new WebSocket('ws://localhost:8080', ['ui']);
 
     ws.onopen = () => {
@@ -504,7 +525,6 @@
       document.getElementById('wsDot').classList.remove('connected');
       document.getElementById('wsStatus').textContent = 'desconectado';
       document.getElementById('connError').classList.add('visible');
-      // Tenta reconectar a cada 3 segundos
       if (!reconnectTimer) {
         reconnectTimer = setInterval(() => {
           if (!ws || ws.readyState === WebSocket.CLOSED) connect();
@@ -516,43 +536,45 @@
   }
 
   function send(obj) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(obj));
-    }
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
   }
 
-  function requestStatus() {
-    send({ type: 'GET_STATUS' });
-  }
+  function requestStatus() { send({ type: 'GET_STATUS' }); }
 
-  // ─── Roteador de mensagens recebidas do server ────────────────────────────────
+  // ─── Roteador de mensagens ───────────────────────────────────────────────────
   function handleMessage(msg) {
     switch (msg.type) {
-      case 'STATUS':          renderAll(msg);            break;
-      case 'SEARCH_HIT':      renderSearchHit(msg);      break;
-      case 'SEARCH_STARTED':  onSearchStarted(msg);      break;
-      case 'TRADE_ACCEPT':    onTradeAccept(msg);        break;
-      case 'TRADE_REJECT':    onTradeReject(msg);        break;
-      case 'TRANSFER_CONFIRM':onTransferConfirm(msg);    break;
-      case 'UI_INFO':         showToast('ℹ️ ' + msg.message, 3000); break;
-      case 'UI_ERROR':        showToast('⚠️ ' + msg.message, 4000, 'error'); break;
+      case 'STATUS':           renderAll(msg);          break;
+      case 'SEARCH_HIT':       renderSearchHit(msg);    break;
+      case 'SEARCH_STARTED':   onSearchStarted(msg);    break;
+      case 'TRADE_ACCEPT':     onTradeAccept(msg);      break;
+      case 'TRADE_REJECT':     onTradeReject(msg);      break;
+      case 'TRANSFER_CONFIRM': onTransferConfirm(msg);  break;
+      case 'UI_INFO':          showToast('ℹ️ ' + msg.message, 3000); break;
+      case 'UI_ERROR':         showToast('⚠️ ' + msg.message, 4000, 'error'); break;
     }
   }
 
-  // ─── Renderização ─────────────────────────────────────────────────────────────
+  // ─── Renderização principal ──────────────────────────────────────────────────
   function renderAll(data) {
-    currentData = data;
-    ownSticker = data.self?.sticker_id || '';
-    document.getElementById('peerIdLabel').textContent = data.self?.peer_id || '—';
-    document.getElementById('stickerIdLabel').textContent = ownSticker || '—';
+    ownSticker    = data.self?.sticker_id   || '';
+    ownStickerUrl = data.self?.sticker_url  || '';
+
+    // Guarda a URL da própria figurinha no cache
+    if (ownSticker && ownStickerUrl) {
+      stickerUrlCache[ownSticker] = ownStickerUrl;
+    }
+
+    document.getElementById('peerIdLabel').textContent    = data.self?.peer_id    || '—';
+    document.getElementById('stickerIdLabel').textContent = ownSticker            || '—';
     document.title = `${data.self?.peer_id || 'P2P'} — Album P2P`;
 
-    const inv = data.inventory || [];
+    const inv   = data.inventory || [];
     const total = inv.reduce((s, x) => s + (x.quantity || 0), 0);
     document.getElementById('statStickers').textContent = inv.length;
-    document.getElementById('statTotal').textContent = total;
-    document.getElementById('statPeers').textContent = (data.peers || []).length;
-    document.getElementById('statTrades').textContent = (data.tradeHistory || []).length;
+    document.getElementById('statTotal').textContent    = total;
+    document.getElementById('statPeers').textContent    = (data.peers || []).length;
+    document.getElementById('statTrades').textContent   = (data.tradeHistory || []).length;
 
     allInventory = inv;
     renderInventoryGrid(inv);
@@ -563,29 +585,45 @@
     document.getElementById('lastUpdate').textContent = ts.toLocaleTimeString('pt-BR');
   }
 
+  // ─── Grid de figurinhas com imagem real ─────────────────────────────────────
   function renderInventoryGrid(items) {
     const count = items.length;
     document.getElementById('inventoryCount').textContent = `${count} figurinha${count !== 1 ? 's' : ''}`;
     const grid = document.getElementById('stickerGrid');
+
     if (!count) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🃏</div><div class="empty-state-text">Inventário vazio</div></div>`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-state-icon">🎴</div>
+        <div class="empty-state-text">Inventário vazio — verifique o config/inventory.json</div>
+      </div>`;
       return;
     }
+
+    // Ordena: autoral primeiro, depois por quantidade desc
     const sorted = [...items].sort((a, b) => {
       if (a.sticker_id === ownSticker) return -1;
-      if (b.sticker_id === ownSticker) return 1;
+      if (b.sticker_id === ownSticker) return  1;
       return b.quantity - a.quantity;
     });
-    const emojis = ['🌟','🎭','🦋','🔮','🎪','🌈','⚡','🎯','🏆','💎','🚀','🌙','🔥','💫','🎸','🦄','🎨','🌊','🦅','🎲','🍀','🎁','🌺','🦊','🎠','🌴','🎡','🦋','💜','🎪'];
+
     grid.innerHTML = sorted.map(s => {
       const isOwn = s.sticker_id === ownSticker;
-      const qty = s.quantity || 0;
-      let qtyClass = qty === 0 ? 'qty-zero' : qty <= 3 ? 'qty-low' : qty <= 10 ? 'qty-mid' : 'qty-good';
-      const num = parseInt(s.sticker_id.replace('FIG-', '')) || 0;
-      const emoji = emojis[num % emojis.length];
-      return `<div class="sticker-card ${isOwn ? 'own' : ''} ${qty === 0 ? 'zero' : ''}" title="${s.sticker_id} — ${qty} unidade(s)">
+      const qty   = s.quantity || 0;
+      const qtyClass = qty === 0 ? 'qty-zero' : qty <= 3 ? 'qty-low' : qty <= 10 ? 'qty-mid' : 'qty-good';
+      // URL: usa cache (populado pelo sticker_url do status ou de buscas) ou caminho local
+      const imgUrl = getStickerUrl(s.sticker_id);
+
+      return `<div class="sticker-card ${isOwn ? 'own' : ''} ${qty === 0 ? 'zero' : ''}" title="${s.sticker_id} — ${qty} cópia(s)">
         ${isOwn ? '<span class="own-pill">AUTORAL</span>' : ''}
-        <span class="sticker-emoji">${emoji}</span>
+        <div class="sticker-img-wrap">
+          <img
+            class="sticker-img"
+            src="${imgUrl}"
+            alt="${s.sticker_id}"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML='<div class=sticker-img-fallback>🎴<span>${s.sticker_id}</span></div>'"
+          />
+        </div>
         <div class="sticker-id">${s.sticker_id}</div>
         <div class="sticker-qty ${qtyClass}">${qty}</div>
         <div class="sticker-label">${qty === 1 ? 'cópia' : 'cópias'}</div>
@@ -599,6 +637,7 @@
     renderInventoryGrid(filtered);
   }
 
+  // ─── Peers ───────────────────────────────────────────────────────────────────
   function renderPeers(list) {
     document.getElementById('peersCount').textContent = list.length;
     const el = document.getElementById('peerList');
@@ -611,12 +650,13 @@
         <div class="peer-avatar">👤</div>
         <div class="peer-info">
           <div class="peer-id">${p.peer_id}</div>
-          <div class="peer-host">${p.host}:${p.port}</div>
+          <div class="peer-host">${p.host || '?'}:${p.port || 8080}</div>
         </div>
         <div class="peer-status"></div>
       </div>`).join('');
   }
 
+  // ─── Trocas ──────────────────────────────────────────────────────────────────
   function renderTrades(history) {
     document.getElementById('tradesCount').textContent = history.length;
     const el = document.getElementById('tradeList');
@@ -641,12 +681,10 @@
   let activeSearchId = null;
 
   function startSearch() {
-    const input = document.getElementById('p2pSearchInput');
+    const input     = document.getElementById('p2pSearchInput');
     const stickerId = input.value.trim().toUpperCase();
-    if (!stickerId) { showToast('⚠️ Digite o ID da figurinha (ex: FIG-07)', 3000, 'error'); return; }
-    if (!ws || ws.readyState !== WebSocket.OPEN) { showToast('⚠️ Sem conexão com o nó', 3000, 'error'); return; }
-
-    // Limpa resultados anteriores e mostra spinner
+    if (!stickerId) { showToast('⚠️ Digite o ID (ex: FIG-07)', 3000, 'error'); return; }
+    if (!ws || ws.readyState !== WebSocket.OPEN) { showToast('⚠️ Sem conexão', 3000, 'error'); return; }
     document.getElementById('searchResults').innerHTML = '';
     document.getElementById('searchSpinner').classList.add('active');
     document.getElementById('searchBtn').disabled = true;
@@ -655,21 +693,18 @@
 
   function onSearchStarted(msg) {
     activeSearchId = msg.query_id;
-    // Mostra mensagem de aguardando enquanto a busca propaga
-    const results = document.getElementById('searchResults');
-    results.innerHTML = `<div style="color:var(--text-secondary);font-size:.82rem;padding:10px 0">
-      ⏳ Buscando <strong>${msg.sticker_id}</strong> na rede… (TTL máximo: 7 hops)
-    </div>`;
-    // Timeout de 10s — se não vier resposta, informa que não foi encontrada
+    document.getElementById('searchResults').innerHTML =
+      `<div style="color:var(--text-secondary);font-size:.82rem;padding:10px 0">
+         ⏳ Buscando <strong>${msg.sticker_id}</strong> na rede… (TTL máximo: 7 hops)
+       </div>`;
     setTimeout(() => {
-      if (activeSearchId === msg.query_id) {
-        stopSearchSpinner();
-        const r = document.getElementById('searchResults');
-        if (r.querySelector('[data-hit]') === null) {
-          r.innerHTML = `<div style="color:var(--accent-warn);font-size:.82rem;padding:10px 0">
-            ❌ Figurinha <strong>${msg.sticker_id}</strong> não encontrada na rede (TTL esgotado).
-          </div>`;
-        }
+      if (activeSearchId !== msg.query_id) return;
+      stopSearchSpinner();
+      const r = document.getElementById('searchResults');
+      if (!r.querySelector('[data-hit]')) {
+        r.innerHTML = `<div style="color:var(--accent-warn);font-size:.82rem;padding:10px 0">
+          ❌ <strong>${msg.sticker_id}</strong> não encontrada na rede (TTL esgotado).
+        </div>`;
       }
     }, 10000);
   }
@@ -677,20 +712,28 @@
   function renderSearchHit(msg) {
     stopSearchSpinner();
     activeSearchId = null;
+
+    // Guarda a URL recebida no cache para uso futuro
+    if (msg.sticker_url) stickerUrlCache[msg.sticker_id] = msg.sticker_url;
+
     const results = document.getElementById('searchResults');
-    // Remove mensagem de "buscando"
     const waiting = results.querySelector('div:not([data-hit])');
     if (waiting) waiting.remove();
 
+    const imgSrc     = getStickerUrl(msg.sticker_id, msg.sticker_url);
     const localBadge = msg.local ? '<span class="result-local">✓ no seu nó</span>' : '';
-    const imgUrl = msg.sticker_url || '';
 
     const item = document.createElement('div');
-    item.className = 'search-result-item';
-    item.dataset.hit = msg.query_id;
+    item.className     = 'search-result-item';
+    item.dataset.hit   = msg.query_id || '1';
     item.innerHTML = `
-      <img class="result-sticker-img" src="${imgUrl}" alt="${msg.sticker_id}"
-           onerror="this.style.display='none'" loading="lazy" />
+      <img
+        class="result-sticker-img"
+        src="${imgSrc}"
+        alt="${msg.sticker_id}"
+        loading="lazy"
+        onerror="this.style.display='none'"
+      />
       <div class="result-info">
         <div class="result-id">${msg.sticker_id}</div>
         <div class="result-peer">📍 ${msg.responder_id}</div>
@@ -721,34 +764,23 @@
   // ─── Troca ───────────────────────────────────────────────────────────────────
   function openTradeOffer(toPeer, wantedSticker) {
     if (!allInventory.length) { showToast('⚠️ Inventário vazio', 3000, 'error'); return; }
-    // Sugere a figurinha autoral como oferta
-    const mySticker = ownSticker || (allInventory[0]?.sticker_id);
-    const offered = prompt(
-      `Você quer ${wantedSticker} de ${toPeer}.\nQual figurinha você vai oferecer?\nSeu inventário: ${allInventory.filter(s=>s.quantity>0).map(s=>s.sticker_id).join(', ')}`,
+    const mySticker = ownSticker || allInventory[0]?.sticker_id;
+    const offered   = prompt(
+      `Você quer ${wantedSticker} de ${toPeer}.\nQual figurinha você vai oferecer?\nInventário: ${allInventory.filter(s=>s.quantity>0).map(s=>s.sticker_id).join(', ')}`,
       mySticker
     );
     if (!offered) return;
     send({
-      type: 'UI_TRADE_OFFER',
-      to_peer_id: toPeer,
+      type:            'UI_TRADE_OFFER',
+      to_peer_id:      toPeer,
       offered_sticker: offered.trim().toUpperCase(),
-      wanted_sticker: wantedSticker,
+      wanted_sticker:  wantedSticker,
     });
   }
 
-  function onTradeAccept(msg) {
-    showToast(`✅ Troca aceita por ${msg.from_peer_id}!`, 4000, 'success');
-    requestStatus();
-  }
-
-  function onTradeReject(msg) {
-    showToast(`❌ Troca recusada por ${msg.from_peer_id || '?'}`, 4000, 'error');
-  }
-
-  function onTransferConfirm(msg) {
-    showToast('🔄 Inventário atualizado após troca!', 3000, 'success');
-    requestStatus();
-  }
+  function onTradeAccept(msg)     { showToast(`✅ Troca aceita por ${msg.from_peer_id}!`, 4000, 'success'); requestStatus(); }
+  function onTradeReject(msg)     { showToast(`❌ Troca recusada por ${msg.from_peer_id || '?'}`, 4000, 'error'); }
+  function onTransferConfirm(msg) { showToast('🔄 Inventário atualizado após troca!', 3000, 'success'); requestStatus(); }
 
   // ─── Toast ───────────────────────────────────────────────────────────────────
   function showToast(msg, duration = 3000, type = '') {
@@ -761,15 +793,10 @@
 
   // ─── Init ────────────────────────────────────────────────────────────────────
   connect();
-
-  // Auto-refresh do status a cada 5s (WebSocket já é push, é só um fallback)
   setInterval(requestStatus, 5000);
-
   document.addEventListener('keydown', e => {
     if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
-      e.preventDefault();
-      requestStatus();
-      showToast('🔄 Atualizado!', 1200, 'success');
+      e.preventDefault(); requestStatus(); showToast('🔄 Atualizado!', 1200, 'success');
     }
   });
 </script>
