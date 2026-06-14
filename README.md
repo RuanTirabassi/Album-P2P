@@ -1,1 +1,151 @@
-A
+# Album-P2P — Sistema de Figurinhas P2P
+
+Projeto da disciplina de **Sistemas Distribuídos** da UENP.
+
+Implementa um nó de rede P2P não estruturada para troca de figurinhas digitais entre alunos. Cada nó representa um aluno, possui uma figurinha autoral e pode buscar, oferecer e aceitar trocas com outros nós da rede via WebSocket.
+
+---
+
+## Tecnologias
+
+- **Runtime:** Node.js
+- **Transporte:** WebSocket (`ws`)
+- **Identificação única de buscas:** UUID v4 (`uuid`)
+- **Interface:** CLI via terminal (`readline`)
+
+---
+
+## Estrutura do projeto
+
+```
+Album-P2P/
+├── PROMPT.md                  ← instruções do agente (spec-driven)
+├── specs/                     ← especificações do projeto
+│   ├── 01-visao-geral.md
+│   ├── 02-arquitetura.md
+│   ├── 03-protocolo.md
+│   ├── 04-regras-de-negocio.md
+│   └── 05-tarefas.md
+├── config/
+│   ├── peers.json             ← configuração do nó e vizinhos
+│   └── inventory.json         ← estado do inventário (persiste em disco)
+├── src/
+│   ├── index.js               ← entry point
+│   ├── server.js              ← WebSocket server (porta 8080)
+│   ├── client.js              ← conexões de saída para vizinhos
+│   ├── messageHandler.js      ← roteador de tipos de mensagem
+│   ├── inventory.js           ← lógica de inventário
+│   ├── peers.js               ← gerenciamento de vizinhos
+│   ├── state.js               ← estado global compartilhado
+│   ├── cli.js                 ← interface de linha de comando
+│   ├── dashboard.js           ← painel de status do nó
+│   └── handlers/
+│       ├── hello.js
+│       ├── search.js
+│       ├── searchHit.js
+│       ├── searchMiss.js
+│       ├── tradeOffer.js
+│       ├── tradeAccept.js
+│       ├── tradeReject.js
+│       └── transferConfirm.js
+└── public/                    ← imagens das figurinhas (PNG)
+```
+
+---
+
+## Instalação
+
+```bash
+# Clonar o repositório
+git clone https://github.com/RuanTirabassi/Album-P2P.git
+cd Album-P2P
+
+# Instalar dependências
+npm install
+```
+
+---
+
+## Configuração
+
+Edite o arquivo `config/peers.json` com as informações do seu nó:
+
+```json
+{
+  "self": {
+    "peer_id": "ALUNO-XX",
+    "sticker_id": "FIG-XX",
+    "sticker_url": "http://SEU-IP:8080/images/FIG-XX.png"
+  },
+  "neighbors": [
+    { "host": "IP-DO-VIZINHO", "port": 8080 }
+  ]
+}
+```
+
+> Substitua `ALUNO-XX` e `FIG-XX` pelo seu número na lista de chamada.
+
+---
+
+## Execução
+
+```bash
+npm start
+# ou
+node src/index.js
+```
+
+---
+
+## Comandos da CLI
+
+Após iniciar o nó, os seguintes comandos estão disponíveis no terminal:
+
+| Comando | Descrição |
+|---------|----------|
+| `inventario` | Lista as figurinhas possuídas e quantidades |
+| `buscar FIG-XX` | Inicia busca por inundação na rede |
+| `trocar FIG-XX com ALUNO-YY` | Envia proposta de troca para um peer |
+| `vizinhos` | Lista os peers conectados |
+| `historico` | Exibe histórico de trocas realizadas |
+| `ajuda` | Lista todos os comandos disponíveis |
+
+---
+
+## Protocolo de mensagens
+
+Todas as mensagens são JSON UTF-8 trocadas via WebSocket na porta **8080**.
+
+| Tipo | Descrição |
+|------|----------|
+| `HELLO` | Anuncia presença ao se conectar a um vizinho |
+| `SEARCH` | Busca figurinha por inundação (TTL padrão: 7) |
+| `SEARCH_HIT` | Resposta positiva — figurinha encontrada |
+| `SEARCH_MISS` | Resposta opcional — figurinha não encontrada |
+| `TRADE_OFFER` | Propõe uma troca entre dois nós |
+| `TRADE_ACCEPT` | Aceita a proposta de troca |
+| `TRADE_REJECT` | Rejeita a proposta de troca |
+| `TRANSFER_CONFIRM` | Confirma atualização de inventário após troca |
+
+Documentação completa do protocolo em [`specs/03-protocolo.md`](./specs/03-protocolo.md).
+
+---
+
+## Padrões obrigatórios
+
+| Item | Valor |
+|------|-------|
+| Arquitetura | P2P não estruturada, sem servidor central |
+| Transporte | WebSocket |
+| Formato | JSON UTF-8 |
+| Porta | 8080 |
+| peer_id | `ALUNO-YY` |
+| sticker_id | `FIG-XX` |
+| TTL de busca | 7 |
+| query_id | UUID v4 aleatório |
+
+---
+
+## Autor
+
+Ruan Tirabassi — Ciência da Computação, UENP
