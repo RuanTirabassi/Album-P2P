@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Album P2P — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       DESIGN TOKENS — Paleta, espaçamentos e animações base
+    ============================================================ */
+    :root {
+      --bg-base:        #0a0d14;
+      --bg-surface:     #111827;
+      --bg-card:        rgba(255,255,255,0.04);
+      --bg-card-hover:  rgba(255,255,255,0.07);
+      --border:         rgba(255,255,255,0.08);
+      --border-accent:  rgba(99,179,237,0.35);
+
+      --accent:         #63b3ed;
+      --accent-2:       #9f7aea;
+      --accent-3:       #68d391;
+      --accent-warn:    #f6ad55;
+      --accent-danger:  #fc8181;
+
+      --text-primary:   #f0f4ff;
+      --text-secondary: #8892a4;
+      --text-muted:     #4a5568;
+
+      --radius-sm:  8px;
+      --radius-md:  14px;
+      --radius-lg:  20px;
+      --radius-xl:  28px;
+
+      --shadow-glow:  0 0 40px rgba(99,179,237,0.12);
+      --shadow-card:  0 4px 24px rgba(0,0,0,0.4);
+
+      --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       BACKGROUND MESH GRADIENT — efeito atmosférico
+    ============================================================ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(99,179,237,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(159,122,234,0.07) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ============================================================
+       LAYOUT PRINCIPAL
+    ============================================================ */
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    /* ============================================================
+       HEADER
+    ============================================================ */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px rgba(99,179,237,0.3);
+    }
+
+    .brand-text h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, var(--text-primary) 60%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand-text p {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 1px;
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ============================================================
+       BADGES & STATUS
+    ============================================================ */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+    }
+
+    .badge-blue  { background: rgba(99,179,237,0.12);  border-color: rgba(99,179,237,0.25);  color: var(--accent); }
+    .badge-green { background: rgba(104,211,145,0.12); border-color: rgba(104,211,145,0.25); color: var(--accent-3); }
+    .badge-purple{ background: rgba(159,122,234,0.12); border-color: rgba(159,122,234,0.25); color: var(--accent-2); }
+    .badge-warn  { background: rgba(246,173,85,0.12);  border-color: rgba(246,173,85,0.25);  color: var(--accent-warn); }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* ============================================================
+       STATUS BAR
+    ============================================================ */
+    .status-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+    }
+
+    .stat-card.blue::before  { background: linear-gradient(90deg, var(--accent), transparent); }
+    .stat-card.green::before { background: linear-gradient(90deg, var(--accent-3), transparent); }
+    .stat-card.purple::before{ background: linear-gradient(90deg, var(--accent-2), transparent); }
+    .stat-card.warn::before  { background: linear-gradient(90deg, var(--accent-warn), transparent); }
+
+    .stat-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255,255,255,0.12);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .stat-value.blue   { color: var(--accent); }
+    .stat-value.green  { color: var(--accent-3); }
+    .stat-value.purple { color: var(--accent-2); }
+    .stat-value.warn   { color: var(--accent-warn); }
+
+    .stat-sub {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* ============================================================
+       SEARCH BAR
+    ============================================================ */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 28px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 14px 16px 14px 46px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    #searchInput::placeholder { color: var(--text-muted); }
+
+    #searchInput:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99,179,237,0.15);
+      background: var(--bg-card-hover);
+    }
+
+    /* ============================================================
+       GRID DE SEÇÕES
+    ============================================================ */
+    .sections-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .section-full { grid-column: 1 / -1; }
+
+    @media (max-width: 768px) {
+      .sections-grid { grid-template-columns: 1fr; }
+      .section-full  { grid-column: auto; }
+    }
+
+    /* ============================================================
+       CARD / PAINEL DE SEÇÃO
+    ============================================================ */
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title-icon { font-size: 15px; }
+
+    .panel-body { padding: 16px; }
+
+    /* ============================================================
+       INVENTÁRIO — GRID DE FIGURINHAS
+    ============================================================ */
+    .sticker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .sticker-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 12px;
+      text-align: center;
+      cursor: default;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sticker-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(99,179,237,0.08) 0%, transparent 70%);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .sticker-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .sticker-card:hover::after { opacity: 1; }
+
+    .sticker-card.zero {
+      opacity: 0.4;
+      border-color: rgba(255,255,255,0.04);
+    }
+
+    .sticker-card.own {
+      border-color: rgba(99,179,237,0.3);
+      background: rgba(99,179,237,0.06);
+    }
+
+    .sticker-emoji {
+      font-size: 28px;
+      margin-bottom: 8px;
+      display: block;
+      filter: drop-shadow(0 2px 8px rgba(99,179,237,0.3));
+    }
+
+    .sticker-id {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .sticker-qty {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .qty-good  { color: var(--accent-3); }
+    .qty-mid   { color: var(--accent); }
+    .qty-low   { color: var(--accent-warn); }
+    .qty-zero  { color: var(--text-muted); }
+
+    .sticker-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .own-pill {
+      position: absolute;
+      top: 6px; right: 6px;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(99,179,237,0.15);
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(99,179,237,0.25);
+    }
+
+    /* ============================================================
+       LISTA DE PEERS
+    ============================================================ */
+    .peer-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .peer-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+
+    .peer-item:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .peer-avatar {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .peer-info { flex: 1; min-width: 0; }
+
+    .peer-id {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .peer-host {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      font-family: 'Courier New', monospace;
+      margin-top: 1px;
+    }
+
+    .peer-status {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent-3);
+      box-shadow: 0 0 6px var(--accent-3);
+      flex-shrink: 0;
+    }
+
+    /* ============================================================
+       HISTÓRICO DE TROCAS
+    ============================================================ */
+    .trade-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .trade-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+
+    .trade-item:hover { background: var(--bg-card-hover); }
+
+    .trade-icon {
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      background: rgba(104,211,145,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .trade-info { flex: 1; min-width: 0; }
+
+    .trade-desc {
+      font-size: 0.83rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .trade-desc .gave  { color: var(--accent-danger); }
+    .trade-desc .got   { color: var(--accent-3); }
+
+    .trade-meta {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .trade-time {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* ============================================================
+       ESTADO VAZIO
+    ============================================================ */
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
+    .empty-state-text { font-size: 0.82rem; }
+
+    /* ============================================================
+       BOTÃO REFRESH
+    ============================================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      border: 1px solid transparent;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.04);
+      border-color: var(--border);
+      color: var(--text-secondary);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-primary);
+    }
+
+    .btn-accent {
+      background: rgba(99,179,237,0.15);
+      border-color: rgba(99,179,237,0.3);
+      color: var(--accent);
+    }
+
+    .btn-accent:hover {
+      background: rgba(99,179,237,0.25);
+      box-shadow: 0 0 16px rgba(99,179,237,0.2);
+    }
+
+    /* ============================================================
+       FOOTER / TIMESTAMP
+    ============================================================ */
+    .footer {
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* ============================================================
+       SKELETON LOADING
+    ============================================================ */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-card) 25%, rgba(255,255,255,0.06) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ============================================================
+       NOTIFICAÇÃO TOAST
+    ============================================================ */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-md);
+      padding: 12px 20px;
+      font-size: 0.82rem;
+      color: var(--accent);
+      box-shadow: var(--shadow-glow), var(--shadow-card);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 1000;
+      max-width: 320px;
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* ============================================================
+       ANIMAÇÃO DE ENTRADA
+    ============================================================ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel { animation: fadeUp 0.4s ease both; }
+    .panel:nth-child(2) { animation-delay: 0.06s; }
+    .panel:nth-child(3) { animation-delay: 0.12s; }
+    .panel:nth-child(4) { animation-delay: 0.18s; }
+
+    /* ============================================================
+       ERRO DE CONEXÃO
+    ============================================================ */
+    .conn-error {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: rgba(252,129,129,0.08);
+      border: 1px solid rgba(252,129,129,0.25);
+      border-radius: var(--radius-sm);
+      color: var(--accent-danger);
+      font-size: 0.82rem;
+      margin-bottom: 20px;
+    }
+
+    .conn-error.visible { display: flex; }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-brand">
+        <div class="logo">🎴</div>
+        <div class="brand-text">
+          <h1>Album P2P</h1>
+          <p id="headerSub">Sistemas Distribuídos — Dashboard</p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <span class="badge badge-blue" id="peerBadge">
+          <span class="dot"></span>
+          <span id="peerIdLabel">carregando…</span>
+        </span>
+        <span class="badge badge-purple" id="stickerBadge">🎴 <span id="stickerIdLabel">—</span></span>
+        <button class="btn btn-ghost" id="refreshBtn" onclick="fetchData()">⟳ Atualizar</button>
+      </div>
+    </header>
+
+    <!-- ERRO DE CONEXÃO -->
+    <div class="conn-error" id="connError">
+      ⚠️ Sem conexão com o nó — verifique se <code>node src/index.js</code> está rodando na porta 8080.
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+      <div class="stat-card blue">
+        <div class="stat-label">Figurinhas</div>
+        <div class="stat-value blue" id="statStickers">—</div>
+        <div class="stat-sub">tipos no inventário</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Total de cópias</div>
+        <div class="stat-value green" id="statTotal">—</div>
+        <div class="stat-sub">unidades disponíveis</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-label">Vizinhos ativos</div>
+        <div class="stat-value purple" id="statPeers">—</div>
+        <div class="stat-sub">peers conectados</div>
+      </div>
+      <div class="stat-card warn">
+        <div class="stat-label">Trocas realizadas</div>
+        <div class="stat-value warn" id="statTrades">—</div>
+        <div class="stat-sub">nesta sessão</div>
+      </div>
+    </div>
+
+    <!-- BUSCA -->
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Filtrar figurinhas… ex: FIG-07"
+        oninput="filterStickers()"
+      />
+    </div>
+
+    <!-- GRID DE SEÇÕES -->
+    <div class="sections-grid">
+
+      <!-- INVENTÁRIO (largura total) -->
+      <div class="panel section-full">
+        <div class="panel-header">
+          <span class="panel-title">
+            <span class="panel-title-icon">📦</span>
+            Inventário
+          </span>
+          <span class="badge badge-blue" id="inventoryCount">0 figurinhas</span>
+        </div>
+        <div class="panel-body">
+          <div class="sticker-grid" id="stickerGrid">
+            <!-- populado via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- VIZINHOS -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">
+            <span class="panel-title-icon">🌐</span>
+            Vizinhos Conectados
+          </span>
+          <span class="badge badge-green" id="peersCount">0</span>
+        </div>
+        <div class="panel-body">
+          <div class="peer-list" id="peerList">
+            <!-- populado via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTÓRICO DE TROCAS -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">
+            <span class="panel-title-icon">🔄</span>
+            Histórico de Trocas
+          </span>
+          <span class="badge badge-warn" id="tradesCount">0</span>
+        </div>
+        <div class="panel-body">
+          <div class="trade-list" id="tradeList">
+            <!-- populado via JS -->
+          </div>
+        </div>
+      </div>
+
+    </div><!-- .sections-grid -->
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <span>Album P2P &mdash; Sistemas Distribuídos</span>
+      <span>Última atualização: <span id="lastUpdate">—</span></span>
+      <span>Auto-refresh a cada 3s</span>
+    </footer>
+
+  </div><!-- .app -->
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- ============================================================
+       JAVASCRIPT — Lógica do dashboard
+  ============================================================ -->
+  <script>
+    // Estado local do dashboard
+    let allInventory = [];
+    let currentData = null;
+    let toastTimer = null;
+
+    // URL da API — assume que o node roda em localhost
+    const API_URL = 'http://localhost:3000/api/status';
+
+    // Busca os dados do nó P2P via fetch e atualiza a interface
+    async function fetchData() {
+      try {
+        const res = await fetch(API_URL, { cache: 'no-store' });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        currentData = data;
+
+        // Esconde erro de conexão se estava visível
+        document.getElementById('connError').classList.remove('visible');
+
+        renderAll(data);
+
+      } catch (err) {
+        // Mostra banner de erro de conexão
+        document.getElementById('connError').classList.add('visible');
+        document.getElementById('peerIdLabel').textContent = 'offline';
+      }
+    }
+
+    // Renderiza todos os painéis com os dados recebidos da API
+    function renderAll(data) {
+      renderHeader(data.self);
+      renderStats(data);
+      renderInventory(data.inventory, data.self.sticker_id);
+      renderPeers(data.peers);
+      renderTrades(data.tradeHistory);
+
+      // Atualiza timestamp de última atualização
+      const ts = new Date(data.timestamp);
+      document.getElementById('lastUpdate').textContent = ts.toLocaleTimeString('pt-BR');
+    }
+
+    // Atualiza o header com peer_id e sticker_id do nó
+    function renderHeader(self) {
+      document.getElementById('peerIdLabel').textContent = self.peer_id;
+      document.getElementById('stickerIdLabel').textContent = self.sticker_id;
+      document.title = `${self.peer_id} — Album P2P`;
+    }
+
+    // Atualiza os cards de estatísticas no topo
+    function renderStats(data) {
+      const inv = data.inventory || [];
+      const total = inv.reduce((sum, s) => sum + (s.quantity || 0), 0);
+
+      document.getElementById('statStickers').textContent = inv.length;
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statPeers').textContent = (data.peers || []).length;
+      document.getElementById('statTrades').textContent = (data.tradeHistory || []).length;
+    }
+
+    // Renderiza a grade de figurinhas do inventário
+    // Armazena em allInventory para o filtro de busca funcionar
+    function renderInventory(inventory, ownSticker) {
+      allInventory = inventory || [];
+      const count = allInventory.length;
+
+      document.getElementById('inventoryCount').textContent =
+        `${count} figurinha${count !== 1 ? 's' : ''}`;
+
+      renderStickerGrid(allInventory, ownSticker);
+    }
+
+    // Aplica o filtro de busca e renderiza apenas as figurinhas correspondentes
+    function filterStickers() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const filtered = query
+        ? allInventory.filter(s =>
+            s.sticker_id.toLowerCase().includes(query) ||
+            String(s.quantity).includes(query)
+          )
+        : allInventory;
+
+      const ownSticker = currentData?.self?.sticker_id || '';
+      renderStickerGrid(filtered, ownSticker);
+    }
+
+    // Renderiza os cards de figurinhas na grade
+    function renderStickerGrid(items, ownSticker) {
+      const grid = document.getElementById('stickerGrid');
+
+      if (!items || items.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-state-icon">🃏</div>
+            <div class="empty-state-text">Nenhuma figurinha encontrada</div>
+          </div>`;
+        return;
+      }
+
+      // Ordena: própria figurinha primeiro, depois por quantidade decrescente
+      const sorted = [...items].sort((a, b) => {
+        if (a.sticker_id === ownSticker) return -1;
+        if (b.sticker_id === ownSticker) return 1;
+        return b.quantity - a.quantity;
+      });
+
+      grid.innerHTML = sorted.map(s => {
+        const isOwn = s.sticker_id === ownSticker;
+        const qty = s.quantity || 0;
+
+        // Define a classe de cor da quantidade baseada no valor
+        let qtyClass = 'qty-good';
+        if (qty === 0) qtyClass = 'qty-zero';
+        else if (qty <= 3)  qtyClass = 'qty-low';
+        else if (qty <= 10) qtyClass = 'qty-mid';
+
+        // Escolhe um emoji baseado no número da figurinha para dar personalidade
+        const num = parseInt(s.sticker_id.replace('FIG-', '')) || 0;
+        const emojis = ['🌟','🎭','🦋','🔮','🎪','🌈','⚡','🎯','🏆','💎',
+                        '🚀','🌙','🔥','💫','🎸','🦄','🎨','🌊','🦅','🎲',
+                        '🍀','🎁','🌺','🦊','🎠','🌴','🎡','🦋','💜','🎪'];
+        const emoji = emojis[num % emojis.length];
+
+        return `
+          <div class="sticker-card ${isOwn ? 'own' : ''} ${qty === 0 ? 'zero' : ''}"
+               title="${s.sticker_id} — ${qty} unidade(s)">
+            ${isOwn ? '<span class="own-pill">AUTORAL</span>' : ''}
+            <span class="sticker-emoji">${emoji}</span>
+            <div class="sticker-id">${s.sticker_id}</div>
+            <div class="sticker-qty ${qtyClass}">${qty}</div>
+            <div class="sticker-label">${qty === 1 ? 'cópia' : 'cópias'}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // Renderiza a lista de peers conectados
+    function renderPeers(peersList) {
+      const list = document.getElementById('peerList');
+      const count = (peersList || []).length;
+
+      document.getElementById('peersCount').textContent = count;
+
+      if (!count) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📡</div>
+            <div class="empty-state-text">Nenhum vizinho conectado</div>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = peersList.map(peer => {
+        // Extrai a inicial do peer para o avatar
+        const initial = (peer.peer_id || '?').replace('ALUNO-', '#');
+
+        return `
+          <div class="peer-item">
+            <div class="peer-avatar">👤</div>
+            <div class="peer-info">
+              <div class="peer-id">${peer.peer_id}</div>
+              <div class="peer-host">${peer.host}:${peer.port}</div>
+            </div>
+            <div class="peer-status"></div>
+          </div>`;
+      }).join('');
+    }
+
+    // Renderiza o histórico de trocas
+    function renderTrades(history) {
+      const list = document.getElementById('tradeList');
+      const count = (history || []).length;
+
+      document.getElementById('tradesCount').textContent = count;
+
+      if (!count) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🤝</div>
+            <div class="empty-state-text">Nenhuma troca realizada ainda</div>
+          </div>`;
+        return;
+      }
+
+      // Mostra as mais recentes primeiro
+      const recent = [...history].reverse().slice(0, 20);
+
+      list.innerHTML = recent.map(trade => {
+        const ts = new Date(trade.timestamp);
+        const timeStr = ts.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const dateStr = ts.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+        return `
+          <div class="trade-item">
+            <div class="trade-icon">🔄</div>
+            <div class="trade-info">
+              <div class="trade-desc">
+                Dei <span class="gave">${trade.gave}</span>
+                &rarr; recebi <span class="got">${trade.received}</span>
+              </div>
+              <div class="trade-meta">parceiro: ${trade.partner}</div>
+            </div>
+            <div class="trade-time">${dateStr} ${timeStr}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // Exibe uma notificação toast temporária
+    function showToast(msg, duration = 3000) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+    }
+
+    // ============================================================
+    // Inicialização — carrega dados e liga o auto-refresh a cada 3s
+    // ============================================================
+    fetchData();
+    setInterval(fetchData, 3000);
+
+    // Atalho de teclado: F5 ou Ctrl+R força refresh manual
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+        e.preventDefault();
+        fetchData();
+        showToast('🔄 Dados atualizados!', 1500);
+      }
+    });
+  </script>
+</body>
+</html>

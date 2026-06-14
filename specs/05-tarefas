@@ -1,0 +1,149 @@
+# 05 — Lista de Tarefas
+
+O agente deve seguir esta lista em ordem. Marcar cada tarefa com `[x]` quando concluída.
+
+---
+
+## Fase 1 — Setup do projeto
+
+- [x] **T01** — Inicializar projeto Node.js: `npm init -y`
+- [x] **T02** — Instalar dependências: `npm install ws uuid`
+- [x] **T03** — Criar estrutura de pastas: `src/`, `src/handlers/`, `config/`
+- [x] **T04** — Criar `config/peers.json` com template (self + neighbors vazio)
+- [x] **T05** — Criar `config/inventory.json` com `{ "FIG-XX": 28 }` (placeholder)
+- [x] **T06** — Criar `package.json` com script `"start": "node src/index.js"`
+
+---
+
+## Fase 2 — Módulos de estado
+
+- [x] **T07** — Implementar `src/inventory.js`
+  - Função `loadInventory()`: lê `config/inventory.json`, retorna Map
+  - Função `saveInventory(map)`: serializa Map e grava em disco
+  - Função `hasSticker(sticker_id)`: retorna qty ou 0
+  - Função `decrementSticker(sticker_id)`: decrementa qty, lança erro se qty <= 0
+  - Função `incrementSticker(sticker_id)`: incrementa qty (cria entry se não existir)
+  - Função `listInventory()`: retorna array de { sticker_id, quantity }
+
+- [x] **T08** — Implementar `src/peers.js`
+  - Map `connectedPeers`: peer_id → { ws, host, port }
+  - Função `registerPeer(peer_id, ws)`: adiciona ao map
+  - Função `removePeer(peer_id)`: remove do map
+  - Função `getPeer(peer_id)`: retorna conexão ws do peer
+  - Função `broadcast(message, excludePeerId)`: envia para todos exceto excluded
+  - Função `sendTo(peer_id, message)`: envia para peer específico
+
+---
+
+## Fase 3 — Servidor WebSocket
+
+- [x] **T09** — Implementar `src/server.js`
+  - Criar WebSocket.Server na porta 8080
+  - Para cada conexão nova: aguardar HELLO para identificar peer_id
+  - Rotear mensagens recebidas para `messageHandler.js`
+  - Ao fechar conexão: chamar `peers.removePeer()`
+  - Logar conexões e desconexões no console
+
+- [x] **T10** — Implementar `src/client.js`
+  - Função `connectToNeighbors(neighborsList)`: abre conexão WS para cada vizinho
+  - Após conexão: enviar HELLO imediatamente
+  - Ao receber mensagem: rotear para `messageHandler.js`
+  - Reconexão automática com `setTimeout(5000)` em caso de fechamento
+
+---
+
+## Fase 4 — Handlers de mensagem
+
+- [x] **T11** — Implementar `src/messageHandler.js`
+  - Switch/if-else por `message.type`
+  - Rotear para handler correto em `src/handlers/`
+  - Logar tipo de mensagem recebida, remetente e campos principais
+
+- [x] **T12** — Implementar `src/handlers/hello.js`
+  - Registrar peer_id recebido via `peers.registerPeer()`
+  - Logar: "Peer ALUNO-XX conectado"
+
+- [x] **T13** — Implementar `src/handlers/search.js`
+  - Implementar algoritmo de inundação conforme `03-protocolo.md`
+  - Verificar `seenQueries` (Set global em `src/state.js`)
+  - Verificar inventário local
+  - Reenviar com ttl-1 para vizinhos exceto sender_id
+  - Chamar `searchHit.js` ou `searchMiss.js` conforme resultado
+
+- [x] **T14** — Implementar `src/handlers/searchHit.js`
+  - Receber SEARCH_HIT e exibir resultado no console para o usuário
+  - Armazenar resultado em `pendingResults` para uso na CLI
+
+- [x] **T15** — Implementar `src/handlers/searchMiss.js`
+  - Logar opcionalmente que o peer não possui a figurinha
+
+- [x] **T16** — Implementar `src/handlers/tradeOffer.js`
+  - Validar pré-condições (ver `04-regras-de-negocio.md`)
+  - Se válido: perguntar ao usuário via CLI se aceita (ou aceitar automaticamente para testes)
+  - Enviar TRADE_ACCEPT ou TRADE_REJECT conforme resposta
+
+- [x] **T17** — Implementar `src/handlers/tradeAccept.js`
+  - Verificar novamente disponibilidade de inventário
+  - Executar a troca: decrementar + incrementar
+  - Salvar inventário
+  - Enviar TRANSFER_CONFIRM
+  - Registrar no histórico
+
+- [x] **T18** — Implementar `src/handlers/tradeReject.js`
+  - Logar rejeição com reason
+  - Remover trade_id dos pendentes
+
+- [x] **T19** — Implementar `src/handlers/transferConfirm.js`
+  - Registrar no histórico de trocas
+  - Logar confirmação no console
+
+---
+
+## Fase 5 — CLI e entry point
+
+- [x] **T20** — Implementar `src/state.js`
+  - Exportar estado global compartilhado entre módulos:
+    - `seenQueries` (Set)
+    - `pendingTrades` (Map)
+    - `tradeHistory` (Array)
+    - `pendingResults` (Map de query_id → resultados)
+
+- [x] **T21** — Implementar `src/cli.js`
+  - Usar `readline` para ler comandos do terminal
+  - Comandos mínimos:
+    - `inventario` — listar figurinhas e quantidades
+    - `buscar FIG-XX` — iniciar SEARCH por inundação
+    - `trocar FIG-XX com ALUNO-YY` — enviar TRADE_OFFER
+    - `vizinhos` — listar peers conectados
+    - `historico` — exibir histórico de trocas
+    - `ajuda` — listar comandos disponíveis
+
+- [x] **T22** — Implementar `src/index.js`
+  - Carregar configuração de `config/peers.json`
+  - Carregar inventário via `inventory.loadInventory()`
+  - Iniciar servidor WebSocket (`server.js`)
+  - Conectar a vizinhos (`client.js`)
+  - Iniciar CLI (`cli.js`)
+  - Exibir mensagem de inicialização com peer_id e sticker_id
+
+---
+
+## Fase 6 — Testes e validação
+
+- [x] **T23** — Testar conexão HELLO entre dois nós locais (portas diferentes ou máquinas diferentes)
+- [x] **T24** — Testar SEARCH por figurinha existente em vizinho direto
+- [x] **T25** — Testar SEARCH por figurinha com TTL chegando a zero (figurinha não encontrada)
+- [x] **T26** — Testar que query_id duplicado é descartado (enviar mesma busca duas vezes)
+- [x] **T27** — Testar fluxo completo de troca: OFFER → ACCEPT → TRANSFER_CONFIRM
+- [x] **T28** — Testar que inventário não fica negativo (tentar trocar com qty = 0)
+- [ ] **T29** — Testar interoperabilidade com sistema de outro grupo
+
+---
+
+## Critério de aceite final
+
+Todas as tarefas acima marcadas com `[x]` E:
+
+- `node src/index.js` inicia sem erros
+- Dois nós conseguem trocar figurinhas do início ao fim
+- Inventários são persistidos corretamente em disco
