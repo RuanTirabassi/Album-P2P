@@ -11,7 +11,7 @@ Implementa um nó de rede P2P não estruturada para troca de figurinhas digitais
 - **Runtime:** Node.js
 - **Transporte:** WebSocket (`ws`)
 - **Identificação única de buscas:** UUID v4 (`uuid`)
-- **Interface:** CLI via terminal (`readline`)
+- **Interface:** CLI via terminal (`readline`) + Dashboard web
 
 ---
 
@@ -38,7 +38,7 @@ Album-P2P/
 │   ├── peers.js               ← gerenciamento de vizinhos
 │   ├── state.js               ← estado global compartilhado
 │   ├── cli.js                 ← interface de linha de comando
-│   ├── dashboard.js           ← painel de status do nó
+│   ├── dashboard.js           ← servidor HTTP do dashboard (porta 3000)
 │   └── handlers/
 │       ├── hello.js
 │       ├── search.js
@@ -48,7 +48,9 @@ Album-P2P/
 │       ├── tradeAccept.js
 │       ├── tradeReject.js
 │       └── transferConfirm.js
-└── public/                    ← imagens das figurinhas (PNG)
+└── public/
+    ├── index.html             ← dashboard visual (servido em :3000)
+    └── images/                ← PNGs das figurinhas (FIG-XX.png)
 ```
 
 ---
@@ -75,7 +77,7 @@ Edite o arquivo `config/peers.json` com as informações do seu nó:
   "self": {
     "peer_id": "ALUNO-XX",
     "sticker_id": "FIG-XX",
-    "sticker_url": "http://SEU-IP:8080/images/FIG-XX.png"
+    "sticker_url": "http://SEU-IP:3000/images/FIG-XX.png"
   },
   "neighbors": [
     { "host": "IP-DO-VIZINHO", "port": 8080 }
@@ -84,6 +86,10 @@ Edite o arquivo `config/peers.json` com as informações do seu nó:
 ```
 
 > Substitua `ALUNO-XX` e `FIG-XX` pelo seu número na lista de chamada.
+>
+> O `sticker_url` usa a porta **3000** (servidor HTTP/Express) que serve os arquivos estáticos de `public/images/`.
+
+Coloque sua figurinha em `public/images/FIG-XX.png` para que ela apareça no dashboard e seja acessível aos outros nós.
 
 ---
 
@@ -94,6 +100,26 @@ npm start
 # ou
 node src/index.js
 ```
+
+Ao iniciar, dois serviços sobem simultaneamente:
+
+| Serviço | Porta | Descrição |
+|---------|-------|----------|
+| WebSocket P2P | **8080** | Comunicação com outros nós e com o dashboard |
+| Dashboard Web | **3000** | Interface visual — acesse `http://localhost:3000` |
+
+---
+
+## Dashboard Web
+
+Abra `http://localhost:3000` no navegador para visualizar em tempo real:
+
+- Status da conexão WebSocket
+- Seu `peer_id` e `sticker_id`
+- Inventário com imagem real de cada figurinha
+- Vizinhos conectados
+- Busca P2P por inundação diretamente pela interface
+- Histórico de trocas realizadas
 
 ---
 
@@ -138,7 +164,8 @@ Documentação completa do protocolo em [`specs/03-protocolo.md`](./specs/03-pro
 | Arquitetura | P2P não estruturada, sem servidor central |
 | Transporte | WebSocket |
 | Formato | JSON UTF-8 |
-| Porta | 8080 |
+| Porta P2P | 8080 |
+| Porta Dashboard | 3000 |
 | peer_id | `ALUNO-YY` |
 | sticker_id | `FIG-XX` |
 | TTL de busca | 7 |
