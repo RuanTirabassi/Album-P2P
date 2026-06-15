@@ -6,12 +6,13 @@
  * e serve para identificar o peer_id do remetente.
  *
  * Fluxo:
- * 1. Validar que peer_id, sticker_id e sticker_url estão presentes
- * 2. Registrar o peer_id no mapa de vizinhos via peers.registerPeer()
- * 3. Logar o peer identificado com sucesso
+ * 1. Validar que peer_id está presente (campo mínimo obrigatório)
+ * 2. Remover eventual chave temporária "host:port" criada pelo client.js
+ * 3. Registrar o peer_id no mapa de vizinhos via peers.registerPeer()
+ * 4. Logar o peer identificado com sucesso
  *
- * Nota: o registro no mapa de peers pode já ter ocorrido em server.js antes
- * de chegar aqui — peers.registerPeer() é idempotente (sobrescreve a entrada).
+ * Nota: sticker_id e sticker_url são opcionais — não são necessários para
+ * rotear mensagens. Grupos que não os enviam devem ser aceitos normalmente.
  *
  * Ref: specs/03-protocolo.md seção HELLO
  */
@@ -19,22 +20,24 @@
 const peers = require("../peers");
 
 // Processa a mensagem HELLO e registra o peer remetente.
-// message: objeto com { type, peer_id, sticker_id, sticker_url }
+// message: objeto com { type, peer_id, sticker_id?, sticker_url? }
 // ws: instância WebSocket da conexão de onde veio a mensagem
 // config: configuração do próprio nó (não usada aqui, mantida por consistência de assinatura)
 function handle(message, ws, config) {
   const { peer_id, sticker_id, sticker_url } = message;
 
-  // Valida campos obrigatórios antes de processar
-  if (!peer_id || !sticker_id) {
-    console.warn("[HELLO] HELLO recebido sem peer_id ou sticker_id — ignorado");
+  // Apenas peer_id é obrigatório para identificar o remetente
+  if (!peer_id) {
+    console.warn("[HELLO] HELLO recebido sem peer_id — ignorado");
     return;
   }
 
   // Registra (ou atualiza) o peer no mapa de vizinhos conectados
+  // peers.registerPeer é idempotente: sobrescreve entrada temporária host:port se existir
   peers.registerPeer(peer_id, ws);
 
-  console.log(`[HELLO]  Peer ${peer_id} registrado com sucesso (figurinha: ${sticker_id})`);
+  const info = sticker_id ? `figurinha: ${sticker_id}` : `sticker_id não informado`;
+  console.log(`[HELLO]  Peer ${peer_id} registrado com sucesso (${info})`);
 }
 
 module.exports = { handle };
