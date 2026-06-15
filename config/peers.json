@@ -2,7 +2,12 @@
   "self": {
     "peer_id": "ALUNO-24",
     "sticker_id": "FIG-24",
-    "sticker_url": "http://localhost:8080/images/FIG-24.png"
+    "sticker_url": "https://rgcoelho01.github.io/album/docs/images/FIG-24.png"
   },
-  "neighbors": []
+  "neighbors": [
+    {
+      "host": "172.16.3.72",
+      "port":8080
+    }
+  ]
 }
