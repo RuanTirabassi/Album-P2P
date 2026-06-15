@@ -1,49 +1,50 @@
 /**
  * handler: searchHit.js
  *
- * Processa mensagens do tipo SEARCH_HIT recebidas de vizinhos.
- * Indica que um peer encontrou a figurinha buscada e está disponível para troca.
+ * Processa mensagens do tipo SEARCH_HIT.
  *
- * Fluxo:
- * 1. Exibir resultado no console para o usuário
- * 2. Armazenar o resultado em pendingResults (Map de query_id → resultados)
- *    para que a CLI possa exibir ao usuário e permitir enviar TRADE_OFFER
- *
- * Ref: specs/03-protocolo.md seção SEARCH_HIT
+ * Formato oficial (spec do professor):
+ * {
+ *   "type": "SEARCH_HIT",
+ *   "message_id": "<uuid>",
+ *   "origin_peer_id": "ALUNO-XX",   // nó que possui a figurinha
+ *   "sender_peer_id": "ALUNO-XX",
+ *   "receiver_peer_id": "ALUNO-YY", // nó que iniciou a busca
+ *   "query_id": "<uuid>",
+ *   "sticker_id": "FIG-XX"
+ * }
  */
 
-const state = require("../state");
+const state = require('../state');
 
-// Processa uma mensagem SEARCH_HIT recebida de um vizinho.
-// message: objeto com { type, query_id, responder_id, sticker_id, sticker_url, quantity }
-// ws: instância WebSocket da conexão (não usada aqui)
-// config: configuração do próprio nó (não usada aqui)
 function handle(message, ws, config) {
-  const { query_id, responder_id, sticker_id, sticker_url, quantity } = message;
+  const { query_id, origin_peer_id, sticker_id, sticker_url } = message;
 
-  console.log(
-    `[SEARCH] SEARCH_HIT: ${sticker_id} encontrada em ${responder_id} ` +
-    `(qty: ${quantity}) — query ${query_id ? query_id.substring(0, 8) : "?"}...`
-  );
-  console.log(`[SEARCH] URL da figurinha: ${sticker_url}`);
+  console.log(`[SEARCH_HIT] Figurinha ${sticker_id} encontrada em ${origin_peer_id}`);
 
-  // Inicializa o array de resultados para este query_id se ainda não existir
-  if (!state.pendingResults.has(query_id)) {
-    state.pendingResults.set(query_id, []);
+  // Acumula resultado no estado para a CLI exibir
+  if (state.pendingResults) {
+    if (!state.pendingResults.has(query_id)) {
+      state.pendingResults.set(query_id, []);
+    }
+    state.pendingResults.get(query_id).push({
+      peer_id: origin_peer_id,
+      sticker_id,
+      sticker_url,
+    });
   }
 
-  // Adiciona o resultado ao array de resultados pendentes desta busca
-  state.pendingResults.get(query_id).push({
-    responder_id,
-    sticker_id,
-    sticker_url,
-    quantity,
-    timestamp: new Date().toISOString(),
-  });
-
-  console.log(
-    `[SEARCH] Resultado armazenado. Use "trocar ${sticker_id} com ${responder_id}" para iniciar uma troca.`
-  );
+  // Notifica o dashboard (browser) se houver busca pendente
+  if (state.pendingUISearches && state.pendingUISearches.has(query_id)) {
+    const uiWs = state.pendingUISearches.get(query_id);
+    if (uiWs && uiWs.readyState === uiWs.OPEN) {
+      uiWs.send(JSON.stringify({
+        type: 'SEARCH_RESULT',
+        hits: [{ peer_id: origin_peer_id, sticker_id, sticker_url }],
+      }));
+    }
+    state.pendingUISearches.delete(query_id);
+  }
 }
 
 module.exports = { handle };
