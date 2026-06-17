@@ -69,7 +69,7 @@ function handle(message, ws, config) {
     // Notifica UI se houver busca pendente do dashboard
     notifyUI(query_id, { peer_id: origin_peer_id, sticker_id: stickerNorm });
   } else {
-    // 3b. Não encontrada → SEARCH_MISS opcional (spec não exige, mas implementamos)
+    // 3b. Não encontrada → SEARCH_MISS opcional
     console.log(`[SEARCH] ${stickerNorm} não encontrada localmente`);
 
     const missMessage = {
@@ -93,7 +93,7 @@ function handle(message, ws, config) {
   }
 }
 
-// Repropaga o SEARCH com ttl-1, atualizando sender_peer_id e receiver_peer_id
+// Repropaga o SEARCH com ttl-1, atualizando sender_peer_id e receiver_peer_id por peer
 function propagateSearch(message, senderPeerId, stickerNorm, config) {
   let count = 0;
 
@@ -106,8 +106,8 @@ function propagateSearch(message, senderPeerId, stickerNorm, config) {
       message_id: uuidv4(),
       ttl: message.ttl - 1,
       sender_peer_id: config.self.peer_id,
-      receiver_peer_id: peerId,          // atualiza para o peer que vai receber
-      sticker_id: stickerNorm,           // sempre normalizado sem .PNG
+      receiver_peer_id: peerId,
+      sticker_id: stickerNorm,
     };
 
     peer.ws.send(JSON.stringify(forwarded));
@@ -124,7 +124,6 @@ function notifyUI(query_id, hit) {
   if (uiWs && uiWs.readyState === uiWs.OPEN) {
     uiWs.send(JSON.stringify({ type: 'SEARCH_RESULT', hits: [hit] }));
   }
-  // Não deleta: podem chegar múltiplos SEARCH_HIT para a mesma query
 }
 
 module.exports = { handle };

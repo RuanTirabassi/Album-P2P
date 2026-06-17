@@ -3,30 +3,45 @@
  *
  * Processa mensagens do tipo HELLO recebidas de vizinhos.
  *
- * Formato oficial (spec do professor):
+ * Spec do professor:
  * {
  *   "type": "HELLO",
  *   "message_id": "<uuid>",
  *   "sender_peer_id": "ALUNO-XX",
  *   "peers": ["ip1", "ip2"]   // opcional
  * }
+ *
+ * Comportamento:
+ * - Registra o peer no mapa de vizinhos
+ * - Responde com HELLO próprio (handshake bidirecional)
  */
 
+const { v4: uuidv4 } = require('uuid');
 const peers = require('../peers');
 
 function handle(message, ws, config) {
-  const { sender_peer_id, message_id, peers: knownPeers } = message;
+  const { sender_peer_id } = message;
 
-  // Loga conteudo completo para debug de interoperabilidade
-  console.log(`[HELLO] Conteúdo recebido: ${JSON.stringify(message)}`);
+  console.log(`[HELLO] Recebido de ${sender_peer_id || 'desconhecido'}: ${JSON.stringify(message)}`);
 
   if (sender_peer_id) {
-    // Promove chave temporária host:port para peer_id real
     peers.registerPeer(sender_peer_id, ws);
     console.log(`[HELLO] Peer ${sender_peer_id} registrado com sucesso`);
   } else {
-    // Vizinho não enviou sender_peer_id — conexão já ativa via host:port
-    console.log(`[HELLO] HELLO sem sender_peer_id — vizinho registrado por host:port, conexão ativa`);
+    console.log(`[HELLO] HELLO sem sender_peer_id — conexão ativa por host:port`);
+  }
+
+  // Responde com HELLO próprio (handshake bidirecional — permite que o outro nos identifique)
+  const reply = {
+    type: 'HELLO',
+    message_id: uuidv4(),
+    sender_peer_id: config.self.peer_id,
+    peers: [],
+  };
+
+  if (ws.readyState === ws.OPEN) {
+    ws.send(JSON.stringify(reply));
+    console.log(`[HELLO] Respondido com HELLO para ${sender_peer_id}`);
   }
 }
 

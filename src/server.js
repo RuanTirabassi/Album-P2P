@@ -1,68 +1,70 @@
 /**
  * server.js
  *
- * Implementa o servidor WebSocket do nó P2P, escutando na porta 8080.
+ * Servidor WebSocket do nó P2P, escutando na porta 8080.
  * Aceita conexões de outros nós (protocolo P2P) e do browser (UI dashboard).
  *
  * Conexões do browser são identificadas pelo header Sec-WebSocket-Protocol: 'ui'
- * ou pelo path /ui — e recebem comandos JSON para buscar figurinhas e propor trocas.
+ * ou pelo path /ui.
  *
  * Responsabilidades:
  * - Iniciar o WebSocket.Server na porta 8080
  * - Registrar peers ao receber HELLO (via peers.js)
  * - Rotear mensagens recebidas para messageHandler.js
  * - Remover peers ao detectar desconexão
- * - Aceitar conexão do dashboard (browser) e responder a comandos UI
- * - Fazer broadcast de eventos (SEARCH_HIT, TRADE_ACCEPT etc.) para o browser
- *
- * Usado por: index.js
- * Usa: messageHandler.js, peers.js, state.js
+ * - Aceitar conexão do dashboard e responder a comandos UI
  */
 
 const WebSocket = require('ws');
+const { v4: uuidv4 } = require('uuid');
+const os = require('os');
 const peers = require('./peers');
 const messageHandler = require('./messageHandler');
 const state = require('./state');
+inventory = require('./inventory');
 
 const PORT = 8080;
+const DEFAULT_TTL = 7;
 
-// Conjunto de websockets do browser (dashboard) conectados no momento
-const uiClients = new Set();
+function getLocalIp() {
+  try {
+    const ifaces = os.networkInterfaces();
+    for (const iface of Object.values(ifaces)) {
+      for (const alias of iface) {
+        if (alias.family === 'IPv4' && !alias.internal) return alias.address;
+      }
+    }
+  } catch (_) {}
+  return 'localhost';
+}
 
 // Envia um objeto JSON para todos os browsers conectados
 function broadcastToUI(obj) {
   const payload = JSON.stringify(obj);
-  for (const client of uiClients) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(payload);
-    }
+  for (const client of state.uiClients) {
+    if (client.readyState === WebSocket.OPEN) client.send(payload);
   }
 }
 
 // Monta o snapshot completo do estado para o browser
 function buildStatusSnapshot() {
-  const peerList = peers.getPeerList ? peers.getPeerList() : [];
   return {
-    type: 'STATUS',
+    type:         'STATUS',
     self: {
       peer_id:    state.config.peer_id,
       sticker_id: state.config.sticker_id,
-      sticker_url: state.config.sticker_url || '',
     },
-    inventory:    state.getInventoryList(),
-    peers:        peerList,
+    inventory:    state.getInventoryList ? state.getInventoryList() : inventory.listInventory(),
+    peers:        peers.getPeerList ? peers.getPeerList() : [],
     tradeHistory: state.tradeHistory || [],
     timestamp:    new Date().toISOString(),
   };
 }
 
-// Inicia o servidor WebSocket e configura os handlers de conexão.
 function startServer(config) {
-  // Salva a config no state para que buildStatusSnapshot() acesse
   state.setConfig({
     peer_id:    config.self.peer_id,
     sticker_id: config.self.sticker_id,
-    sticker_url: config.self.sticker_url || `http://localhost:3000/images/${config.self.sticker_id}.png`,
   });
 
   const wss = new WebSocket.Server({ port: PORT });
@@ -71,17 +73,16 @@ function startServer(config) {
   wss.on('connection', (ws, req) => {
     const remoteIp = req.socket.remoteAddress;
 
-    // ── Detecta se a conexão vem do browser (dashboard) ──────────────────────
+    // Detecta se a conexão vem do browser (dashboard)
     const isUI =
       (req.headers['sec-websocket-protocol'] || '').includes('ui') ||
       (req.url || '').startsWith('/ui');
 
     if (isUI) {
-      // ── Conexão do Dashboard (browser) ───────────────────────────────────
+      // ── Conexão do Dashboard (browser) ──────────────────────────────────
       console.log(`[SERVER] Browser/Dashboard conectado de ${remoteIp}`);
-      uiClients.add(ws);
+      state.uiClients.add(ws);
 
-      // Envia o estado atual imediatamente ao browser ao conectar
       ws.send(JSON.stringify(buildStatusSnapshot()));
 
       ws.on('message', (data) => {
@@ -91,53 +92,60 @@ function startServer(config) {
 
         switch (cmd.type) {
 
-          // Browser pede snapshot atualizado do estado
           case 'GET_STATUS':
             ws.send(JSON.stringify(buildStatusSnapshot()));
             break;
 
-          // Browser inicia uma busca por figurinha na rede P2P
+          // Browser inicia busca — monta SEARCH no formato exato do spec
           case 'UI_SEARCH': {
-            const queryId = require('crypto').randomUUID();
+            const query_id  = uuidv4();
+            const message_id = uuidv4();
+
             const searchMsg = {
-              type:      'SEARCH',
-              query_id:  queryId,
-              sticker_id: cmd.sticker_id,
-              origin_id: state.config.peer_id,
-              ttl:       7,
+              type:             'SEARCH',
+              message_id,
+              origin_peer_id:   config.self.peer_id,
+              origin_peer_ip:   getLocalIp(),
+              sender_peer_id:   config.self.peer_id,
+              receiver_peer_id: null,   // preenchido por cada vizinho no broadcast
+              query_id,
+              ttl:              DEFAULT_TTL,
+              sticker_id:       (cmd.sticker_id || '').toUpperCase(),
             };
 
             // Marca como visto para não reprocessar se receber de volta
-            state.markQuerySeen(queryId);
+            state.seenQueries.add(query_id);
+            state.pendingResults.set(query_id, []);
 
             // Verifica o próprio inventário primeiro
-            const localQty = state.getQuantity(cmd.sticker_id);
+            const stickerNorm = (cmd.sticker_id || '').replace(/\.png$/i, '').toUpperCase();
+            const localQty = inventory.hasSticker(stickerNorm);
             if (localQty > 0) {
               ws.send(JSON.stringify({
-                type:         'SEARCH_HIT',
-                query_id:     queryId,
-                sticker_id:   cmd.sticker_id,
-                responder_id: state.config.peer_id,
-                sticker_url:  state.config.sticker_url || `http://localhost:3000/images/${cmd.sticker_id}.png`,
-                quantity:     localQty,
-                local:        true,
-              }));
-            } else {
-              // Propaga para os vizinhos e aguarda SEARCH_HIT
-              peers.broadcast(searchMsg, null);
-              state.pendingUISearches.set(queryId, ws);
-              ws.send(JSON.stringify({
-                type:       'SEARCH_STARTED',
-                query_id:   queryId,
-                sticker_id: cmd.sticker_id,
+                type:       'SEARCH_RESULT',
+                hits: [{
+                  peer_id:    config.self.peer_id,
+                  sticker_id: stickerNorm,
+                  local:      true,
+                }],
               }));
             }
+
+            // Propaga para vizinhos e aguarda SEARCH_HIT
+            peers.broadcast(searchMsg, null);
+            state.pendingUISearches.set(query_id, ws);
+
+            ws.send(JSON.stringify({
+              type:       'SEARCH_STARTED',
+              query_id,
+              sticker_id: stickerNorm,
+            }));
             break;
           }
 
-          // Browser propõe uma troca diretamente para um peer
+          // Browser propõe troca — monta TRADE_OFFER no formato exato do spec
           case 'UI_TRADE_OFFER': {
-            const target = peers.getSocket(cmd.to_peer_id);
+            const target = peers.getSocket ? peers.getSocket(cmd.to_peer_id) : null;
             if (!target || target.readyState !== WebSocket.OPEN) {
               ws.send(JSON.stringify({
                 type:    'UI_ERROR',
@@ -145,18 +153,45 @@ function startServer(config) {
               }));
               break;
             }
+
+            // Verifica inventário antes de enviar
+            const offerQty = inventory.hasSticker(cmd.offer_sticker_id);
+            if (!offerQty || offerQty <= 0) {
+              ws.send(JSON.stringify({
+                type:    'UI_ERROR',
+                message: `Sem estoque de ${cmd.offer_sticker_id} para oferecer.`,
+              }));
+              break;
+            }
+
+            const message_id = uuidv4();
+
+            // Formato exato do spec: offer_sticker_id e want_sticker_id
             const offer = {
               type:             'TRADE_OFFER',
-              trade_id:         require('crypto').randomUUID(),
-              from_peer_id:     state.config.peer_id,
-              to_peer_id:       cmd.to_peer_id,
-              offered_sticker:  cmd.offered_sticker,
-              wanted_sticker:   cmd.wanted_sticker,
+              message_id,
+              origin_peer_id:   config.self.peer_id,
+              sender_peer_id:   config.self.peer_id,
+              receiver_peer_id: cmd.to_peer_id,
+              offer_sticker_id: (cmd.offer_sticker_id || '').toUpperCase(),
+              want_sticker_id:  (cmd.want_sticker_id  || '').toUpperCase(),
             };
+
             target.send(JSON.stringify(offer));
+
+            // Registra como pendente localmente
+            state.pendingTrades.set(message_id, {
+              trade_id:  message_id,
+              from_peer: config.self.peer_id,
+              to_peer:   cmd.to_peer_id,
+              offer:     offer.offer_sticker_id,
+              want:      offer.want_sticker_id,
+              timestamp: Date.now(),
+            });
+
             ws.send(JSON.stringify({
               type:    'UI_INFO',
-              message: `Proposta enviada para ${cmd.to_peer_id}`,
+              message: `TRADE_OFFER enviada para ${cmd.to_peer_id}`,
             }));
             break;
           }
@@ -170,81 +205,58 @@ function startServer(config) {
       });
 
       ws.on('close', () => {
-        uiClients.delete(ws);
+        state.uiClients.delete(ws);
         console.log('[SERVER] Browser desconectado');
       });
 
       ws.on('error', (err) => {
         console.error(`[SERVER] Erro no browser client: ${err.message}`);
-        uiClients.delete(ws);
+        state.uiClients.delete(ws);
       });
 
-      return; // Não cai no handler P2P abaixo
+      return;
     }
 
-    // ── Conexão P2P (outro nó) ────────────────────────────────────────────────
-    console.log(`[SERVER] Nova conexão P2P recebida de ${remoteIp}`);
-    let remotePeerId = null;
+    // ── Conexão P2P (outro nó) ────────────────────────────────────────────
+    console.log(`[SERVER] Nova conexão P2P de ${remoteIp}`);
+
+    // Registra temporariamente até receber HELLO com sender_peer_id
+    const tempKey = remoteIp;
+    peers.registerPeer(tempKey, ws, remoteIp, PORT);
 
     ws.on('message', (data) => {
       let message;
       try {
         message = JSON.parse(data.toString('utf-8'));
       } catch (err) {
-        console.warn(`[SERVER] Mensagem inválida de ${remoteIp}: ${err.message}`);
+        console.warn(`[SERVER] JSON inválido de ${remoteIp}: ${err.message}`);
         return;
       }
 
-      if (message.type === 'HELLO' && !remotePeerId) {
-        remotePeerId = message.peer_id;
-        peers.registerPeer(remotePeerId, ws, remoteIp, PORT);
-        // Atualiza o dashboard com o novo peer
-        setTimeout(() => broadcastToUI(buildStatusSnapshot()), 100);
-      }
-
-      // Encaminha SEARCH_HIT pendente para o browser que originou a busca
-      if (message.type === 'SEARCH_HIT') {
-        const uiWs = state.pendingUISearches.get(message.query_id);
-        if (uiWs && uiWs.readyState === WebSocket.OPEN) {
-          uiWs.send(JSON.stringify(message));
-          state.pendingUISearches.delete(message.query_id);
-        }
-        broadcastToUI(message);
-      }
-
-      // Eventos de troca chegam ao browser em tempo real
-      if (['TRADE_ACCEPT', 'TRADE_REJECT', 'TRANSFER_CONFIRM'].includes(message.type)) {
-        broadcastToUI(message);
-        // Após troca concluída, envia snapshot atualizado com novo inventário
-        if (message.type === 'TRANSFER_CONFIRM') {
-          setTimeout(() => broadcastToUI(buildStatusSnapshot()), 300);
-        }
+      // Se o primeiro HELLO chegar, promove chave temporária
+      if (message.type === 'HELLO' && message.sender_peer_id) {
+        peers.removePeer(tempKey);
+        peers.registerPeer(message.sender_peer_id, ws, remoteIp, PORT);
+        console.log(`[SERVER] Peer identificado: ${message.sender_peer_id} (${remoteIp})`);
       }
 
       messageHandler.handle(message, ws, config);
     });
 
     ws.on('close', () => {
-      if (remotePeerId) {
-        console.log(`[SERVER] Conexão encerrada com ${remotePeerId}`);
-        peers.removePeer(remotePeerId);
-        broadcastToUI(buildStatusSnapshot());
-      } else {
-        console.log(`[SERVER] Conexão encerrada com ${remoteIp} (peer não identificado)`);
-      }
+      peers.removePeer(tempKey);
+      console.log(`[SERVER] Peer ${remoteIp} desconectado`);
     });
 
     ws.on('error', (err) => {
-      console.error(`[SERVER] Erro com ${remotePeerId || remoteIp}: ${err.message}`);
+      console.error(`[SERVER] Erro com peer ${remoteIp}: ${err.message}`);
+      peers.removePeer(tempKey);
     });
   });
 
   wss.on('error', (err) => {
-    console.error(`[SERVER] Erro fatal no servidor: ${err.message}`);
-    process.exit(1);
+    console.error(`[SERVER] Erro no servidor WebSocket: ${err.message}`);
   });
-
-  return wss;
 }
 
-module.exports = { startServer, broadcastToUI, buildStatusSnapshot };
+module.exports = { startServer, broadcastToUI };

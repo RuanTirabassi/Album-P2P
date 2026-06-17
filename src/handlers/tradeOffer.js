@@ -32,8 +32,6 @@ function handle(message, ws, config) {
   const haveWanted = inventory.hasSticker(want_sticker_id);
   if (!haveWanted || haveWanted <= 0) {
     console.log(`[TRADE_OFFER] Não possuímos ${want_sticker_id} — oferta ignorada (inventário insuficiente)`);
-    // Não rejeita automaticamente — apenas não registra como pendente
-    // O spec diz: "só é permitida troca se ambos tiverem disponibilidade"
     return;
   }
 
