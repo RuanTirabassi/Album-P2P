@@ -139,6 +139,8 @@
     .btn-accent:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-green  { background: rgba(104,211,145,0.15); border-color: rgba(104,211,145,0.3); color: var(--accent-3); }
     .btn-green:hover  { background: rgba(104,211,145,0.25); }
+    .btn-danger { background: rgba(252,129,129,0.15); border-color: rgba(252,129,129,0.3); color: var(--accent-danger); }
+    .btn-danger:hover { background: rgba(252,129,129,0.25); }
     .btn-ghost  { background: rgba(255,255,255,0.04); border-color: var(--border); color: var(--text-secondary); }
     .btn-ghost:hover  { background: rgba(255,255,255,0.08); color: var(--text-primary); }
     .search-results { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
@@ -296,6 +298,41 @@
     #toast.error   { border-color: rgba(252,129,129,0.4); color: var(--accent-danger); }
     #toast.success { border-color: rgba(104,211,145,0.4); color: var(--accent-3); }
     @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── Modal de proposta de troca recebida ───────────────────────────── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 2000;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal {
+      background: var(--bg-surface); border: 1px solid rgba(246,173,85,0.4);
+      border-radius: var(--radius-lg); padding: 28px 32px;
+      max-width: 440px; width: 90%; box-shadow: 0 0 60px rgba(246,173,85,0.15);
+      animation: fadeUp 0.25s ease both;
+    }
+    .modal-title {
+      font-size: 1rem; font-weight: 800; color: var(--accent-warn);
+      margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+    }
+    .modal-sub { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 20px; }
+    .modal-stickers {
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; margin-bottom: 22px;
+    }
+    .modal-sticker-box {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .modal-sticker-box img {
+      width: 80px; height: 100px; border-radius: 10px;
+      object-fit: cover; border: 1px solid var(--border);
+      background: var(--bg-base);
+    }
+    .modal-sticker-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+    .modal-sticker-id    { font-size: 0.9rem; font-weight: 700; }
+    .modal-arrow { font-size: 1.6rem; color: var(--text-muted); }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
   </style>
 </head>
 <body>
@@ -396,29 +433,42 @@
   </footer>
 </div>
 
+<!-- Modal: proposta de troca recebida de outro peer -->
+<div class="modal-overlay" id="tradeModal">
+  <div class="modal">
+    <div class="modal-title">🤝 Proposta de Troca Recebida!</div>
+    <div class="modal-sub" id="tradeModalSub"></div>
+    <div class="modal-stickers">
+      <div class="modal-sticker-box">
+        <img id="tradeModalOfferImg" src="" alt="" />
+        <div class="modal-sticker-label">Ele oferece</div>
+        <div class="modal-sticker-id" id="tradeModalOfferId" style="color:var(--accent-3)"></div>
+      </div>
+      <div class="modal-arrow">⇄</div>
+      <div class="modal-sticker-box">
+        <img id="tradeModalWantImg" src="" alt="" />
+        <div class="modal-sticker-label">Ele quer</div>
+        <div class="modal-sticker-id" id="tradeModalWantId" style="color:var(--accent-danger)"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger"  id="tradeRejectBtn"  onclick="respondTrade(false)">✕ Rejeitar</button>
+      <button class="btn btn-green"   id="tradeAcceptBtn"  onclick="respondTrade(true)">✓ Aceitar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
-  /**
-   * Monta a URL pública de uma figurinha.
-   * Garante: sem .png duplicado, sem extensão em maiúsculo, sempre termina em .png
-   * Exemplos:
-   *   'FIG-22'     -> https://rgcoelho01.github.io/album/docs/images/FIG-22.png
-   *   'FIG-22.png' -> https://rgcoelho01.github.io/album/docs/images/FIG-22.png
-   *   'FIG-22.PNG' -> https://rgcoelho01.github.io/album/docs/images/FIG-22.png
-   *   'fig-22'     -> https://rgcoelho01.github.io/album/docs/images/FIG-22.png
-   */
   function stickerUrl(rawId) {
-    // Remove extensão existente (qualquer capitalização) e normaliza para maiúsculas
     const clean = (rawId || '').replace(/\.png$/i, '').toUpperCase().trim();
     return 'https://rgcoelho01.github.io/album/docs/images/' + clean + '.png';
   }
 
-  // Cria elemento <img> com fallback via JS (evita problemas de template literal no onerror)
   function makeStickerImg(stickerId) {
     const wrap = document.createElement('div');
     wrap.className = 'sticker-img-wrap';
-
     const img = document.createElement('img');
     img.className = 'sticker-img';
     img.src       = stickerUrl(stickerId);
@@ -430,7 +480,6 @@
       fb.innerHTML = '🎴<span>' + stickerId + '</span>';
       wrap.replaceChild(fb, img);
     };
-
     wrap.appendChild(img);
     return wrap;
   }
@@ -440,6 +489,9 @@
   let ownSticker     = '';
   let toastTimer     = null;
   let reconnectTimer = null;
+
+  // Armazena a proposta pendente atualmente exibida no modal
+  let pendingTradeOffer = null;
 
   function connect() {
     ws = new WebSocket('ws://localhost:8080', ['ui']);
@@ -476,26 +528,70 @@
 
   function handleMessage(msg) {
     switch (msg.type) {
-      case 'STATUS':           renderAll(msg);         break;
-      case 'SEARCH_HIT':       renderSearchHit(msg);   break;
-      case 'SEARCH_RESULT':    renderSearchHit(msg.hits ? msg.hits[0] : msg); break;
-      case 'SEARCH_STARTED':   onSearchStarted(msg);   break;
-      case 'TRADE_ACCEPT':     onTradeAccept(msg);     break;
-      case 'TRADE_REJECT':     onTradeReject(msg);     break;
-      case 'TRANSFER_CONFIRM': onTransferConfirm(msg); break;
-      case 'UI_INFO':          showToast('ℹ️ ' + msg.message, 3000);            break;
-      case 'UI_ERROR':         showToast('⚠️ ' + msg.message, 4000, 'error'); break;
+      case 'STATUS':                renderAll(msg);              break;
+      case 'SEARCH_HIT':            renderSearchHit(msg);        break;
+      case 'SEARCH_RESULT':         renderSearchHit(msg.hits ? msg.hits[0] : msg); break;
+      case 'SEARCH_STARTED':        onSearchStarted(msg);        break;
+      case 'TRADE_OFFER_RECEIVED':  onTradeOfferReceived(msg);   break;  // << NOVO
+      case 'TRADE_ACCEPT':          onTradeAccept(msg);          break;
+      case 'TRADE_REJECT':          onTradeReject(msg);          break;
+      case 'TRANSFER_CONFIRM':      onTransferConfirm(msg);      break;
+      case 'UI_INFO':               showToast('ℹ️ ' + msg.message, 3000);            break;
+      case 'UI_ERROR':              showToast('⚠️ ' + msg.message, 4000, 'error'); break;
     }
   }
 
+  // ── Handler: proposta de troca chegou de outro peer ──────────────────
+  function onTradeOfferReceived(msg) {
+    pendingTradeOffer = msg;
+
+    document.getElementById('tradeModalSub').textContent =
+      msg.from_peer + ' quer fazer uma troca com você!';
+
+    const offerImg = document.getElementById('tradeModalOfferImg');
+    offerImg.src = stickerUrl(msg.offer_sticker_id);
+    offerImg.alt = msg.offer_sticker_id;
+    offerImg.onerror = function() { this.style.display = 'none'; };
+
+    const wantImg = document.getElementById('tradeModalWantImg');
+    wantImg.src = stickerUrl(msg.want_sticker_id);
+    wantImg.alt = msg.want_sticker_id;
+    wantImg.onerror = function() { this.style.display = 'none'; };
+
+    document.getElementById('tradeModalOfferId').textContent = msg.offer_sticker_id;
+    document.getElementById('tradeModalWantId').textContent  = msg.want_sticker_id;
+
+    document.getElementById('tradeModal').classList.add('visible');
+    showToast('🤝 Proposta de troca de ' + msg.from_peer + '!', 5000, 'success');
+  }
+
+  function respondTrade(accept) {
+    if (!pendingTradeOffer) return;
+    document.getElementById('tradeModal').classList.remove('visible');
+
+    send({
+      type:       accept ? 'UI_TRADE_ACCEPT' : 'UI_TRADE_REJECT',
+      message_id: pendingTradeOffer.message_id,
+    });
+
+    showToast(
+      accept ? '✅ Troca aceita!' : '❌ Troca rejeitada',
+      3000,
+      accept ? 'success' : 'error'
+    );
+    pendingTradeOffer = null;
+    if (accept) setTimeout(requestStatus, 800);
+  }
+  // ─────────────────────────────────────────────────────────────────────
+
   function renderAll(data) {
-    ownSticker = data.self?.sticker_id || '';
-    document.getElementById('peerIdLabel').textContent    = data.self?.peer_id || '—';
-    document.getElementById('stickerIdLabel').textContent = ownSticker         || '—';
-    document.title = (data.self?.peer_id || 'P2P') + ' — Album P2P';
+    ownSticker = data.self && data.self.sticker_id ? data.self.sticker_id : '';
+    document.getElementById('peerIdLabel').textContent    = (data.self && data.self.peer_id) ? data.self.peer_id : '—';
+    document.getElementById('stickerIdLabel').textContent = ownSticker || '—';
+    document.title = ((data.self && data.self.peer_id) || 'P2P') + ' — Album P2P';
 
     const inv   = data.inventory || [];
-    const total = inv.reduce((s, x) => s + (x.quantity || 0), 0);
+    const total = inv.reduce(function(s, x) { return s + (x.quantity || 0); }, 0);
     document.getElementById('statStickers').textContent = inv.length;
     document.getElementById('statTotal').textContent    = total;
     document.getElementById('statPeers').textContent    = (data.peers || []).length;
@@ -527,13 +623,13 @@
       return;
     }
 
-    const sorted = [...items].sort((a, b) => {
+    const sorted = items.slice().sort(function(a, b) {
       if (a.sticker_id === ownSticker) return -1;
       if (b.sticker_id === ownSticker) return  1;
       return b.quantity - a.quantity;
     });
 
-    sorted.forEach(s => {
+    sorted.forEach(function(s) {
       const isOwn    = s.sticker_id === ownSticker;
       const qty      = s.quantity || 0;
       const qtyClass = qty === 0 ? 'qty-zero' : qty <= 3 ? 'qty-low' : qty <= 10 ? 'qty-mid' : 'qty-good';
@@ -549,7 +645,6 @@
         card.appendChild(pill);
       }
 
-      // Imagem via DOM (evita problemas de escape no onerror)
       card.appendChild(makeStickerImg(s.sticker_id));
 
       const idEl = document.createElement('div');
@@ -573,7 +668,7 @@
 
   function filterInventory() {
     const q = document.getElementById('invFilter').value.trim().toLowerCase();
-    const filtered = q ? allInventory.filter(s => s.sticker_id.toLowerCase().includes(q)) : allInventory;
+    const filtered = q ? allInventory.filter(function(s) { return s.sticker_id.toLowerCase().indexOf(q) !== -1; }) : allInventory;
     renderInventoryGrid(filtered);
   }
 
@@ -585,16 +680,16 @@
                      '<div class="empty-state-text">Nenhum vizinho conectado</div></div>';
       return;
     }
-    el.innerHTML = list.map(p =>
-      '<div class="peer-item">' +
+    el.innerHTML = list.map(function(p) {
+      return '<div class="peer-item">' +
         '<div class="peer-avatar">👤</div>' +
         '<div class="peer-info">' +
           '<div class="peer-id">' + p.peer_id + '</div>' +
           '<div class="peer-host">' + (p.host || '?') + ':' + (p.port || 8080) + '</div>' +
         '</div>' +
         '<div class="peer-status"></div>' +
-      '</div>'
-    ).join('');
+      '</div>';
+    }).join('');
   }
 
   function renderTrades(history) {
@@ -605,7 +700,7 @@
                      '<div class="empty-state-text">Nenhuma troca ainda</div></div>';
       return;
     }
-    el.innerHTML = [...history].reverse().slice(0, 20).map(t => {
+    el.innerHTML = history.slice().reverse().slice(0, 20).map(function(t) {
       const ts = new Date(t.timestamp);
       return '<div class="trade-item">' +
         '<div class="trade-icon">🔄</div>' +
@@ -664,7 +759,6 @@
     item.className   = 'search-result-item';
     item.dataset.hit = msg.query_id || '1';
 
-    // Imagem via DOM
     const img = document.createElement('img');
     img.className = 'result-sticker-img';
     img.src       = stickerUrl(stickerId);
@@ -708,11 +802,11 @@
 
   function openTradeOffer(toPeer, wantedSticker) {
     if (!allInventory.length) { showToast('⚠️ Inventário vazio', 3000, 'error'); return; }
-    const available = allInventory.filter(s => s.quantity > 0);
+    const available = allInventory.filter(function(s) { return s.quantity > 0; });
     const mySticker = ownSticker || (available[0] && available[0].sticker_id);
     const offered   = prompt(
       'Você quer ' + wantedSticker + ' de ' + toPeer + '.\nQual figurinha vai oferecer?\nDisponíveis: ' +
-      available.map(s => s.sticker_id).join(', '),
+      available.map(function(s) { return s.sticker_id; }).join(', '),
       mySticker
     );
     if (!offered) return;
