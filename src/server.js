@@ -1,18 +1,5 @@
 /**
  * server.js
- *
- * Servidor WebSocket do nó P2P, escutando na porta 8080.
- * Aceita conexões de outros nós (protocolo P2P) e do browser (UI dashboard).
- *
- * Conexões do browser são identificadas pelo header Sec-WebSocket-Protocol: 'ui'
- * ou pelo path /ui.
- *
- * Responsabilidades:
- * - Iniciar o WebSocket.Server na porta 8080
- * - Registrar peers ao receber HELLO (via peers.js)
- * - Rotear mensagens recebidas para messageHandler.js
- * - Remover peers ao detectar desconexão
- * - Aceitar conexão do dashboard e responder a comandos UI
  */
 
 const WebSocket = require('ws');
@@ -38,7 +25,6 @@ function getLocalIp() {
   return 'localhost';
 }
 
-// Envia um objeto JSON para todos os browsers conectados
 function broadcastToUI(obj) {
   const payload = JSON.stringify(obj);
   for (const client of state.uiClients) {
@@ -46,7 +32,6 @@ function broadcastToUI(obj) {
   }
 }
 
-// Monta o snapshot completo do estado para o browser
 function buildStatusSnapshot() {
   return {
     type:         'STATUS',
@@ -73,13 +58,11 @@ function startServer(config) {
   wss.on('connection', (ws, req) => {
     const remoteIp = req.socket.remoteAddress;
 
-    // Detecta se a conexão vem do browser (dashboard)
     const isUI =
       (req.headers['sec-websocket-protocol'] || '').includes('ui') ||
       (req.url || '').startsWith('/ui');
 
     if (isUI) {
-      // ── Conexão do Dashboard (browser) ──────────────────────────────────
       console.log(`[SERVER] Browser/Dashboard conectado de ${remoteIp}`);
       state.uiClients.add(ws);
 
@@ -96,9 +79,8 @@ function startServer(config) {
             ws.send(JSON.stringify(buildStatusSnapshot()));
             break;
 
-          // Browser inicia busca — monta SEARCH no formato exato do spec
           case 'UI_SEARCH': {
-            const query_id  = uuidv4();
+            const query_id   = uuidv4();
             const message_id = uuidv4();
 
             const searchMsg = {
@@ -107,22 +89,20 @@ function startServer(config) {
               origin_peer_id:   config.self.peer_id,
               origin_peer_ip:   getLocalIp(),
               sender_peer_id:   config.self.peer_id,
-              receiver_peer_id: null,   // preenchido por cada vizinho no broadcast
+              receiver_peer_id: null,
               query_id,
               ttl:              DEFAULT_TTL,
               sticker_id:       (cmd.sticker_id || '').toUpperCase(),
             };
 
-            // Marca como visto para não reprocessar se receber de volta
             state.seenQueries.add(query_id);
             state.pendingResults.set(query_id, []);
 
-            // Verifica o próprio inventário primeiro
             const stickerNorm = (cmd.sticker_id || '').replace(/\.png$/i, '').toUpperCase();
             const localQty = inventory.hasSticker(stickerNorm);
             if (localQty > 0) {
               ws.send(JSON.stringify({
-                type:       'SEARCH_RESULT',
+                type: 'SEARCH_RESULT',
                 hits: [{
                   peer_id:    config.self.peer_id,
                   sticker_id: stickerNorm,
@@ -131,7 +111,6 @@ function startServer(config) {
               }));
             }
 
-            // Propaga para vizinhos e aguarda SEARCH_HIT
             peers.broadcast(searchMsg, null);
             state.pendingUISearches.set(query_id, ws);
 
@@ -143,7 +122,6 @@ function startServer(config) {
             break;
           }
 
-          // Browser propõe troca — monta TRADE_OFFER no formato exato do spec
           case 'UI_TRADE_OFFER': {
             const target = peers.getSocket ? peers.getSocket(cmd.to_peer_id) : null;
             if (!target || target.readyState !== WebSocket.OPEN) {
@@ -154,7 +132,6 @@ function startServer(config) {
               break;
             }
 
-            // Verifica inventário antes de enviar
             const offerQty = inventory.hasSticker(cmd.offer_sticker_id);
             if (!offerQty || offerQty <= 0) {
               ws.send(JSON.stringify({
@@ -165,8 +142,6 @@ function startServer(config) {
             }
 
             const message_id = uuidv4();
-
-            // Formato exato do spec: offer_sticker_id e want_sticker_id
             const offer = {
               type:             'TRADE_OFFER',
               message_id,
@@ -179,7 +154,6 @@ function startServer(config) {
 
             target.send(JSON.stringify(offer));
 
-            // Registra como pendente localmente
             state.pendingTrades.set(message_id, {
               trade_id:  message_id,
               from_peer: config.self.peer_id,
@@ -192,6 +166,105 @@ function startServer(config) {
             ws.send(JSON.stringify({
               type:    'UI_INFO',
               message: `TRADE_OFFER enviada para ${cmd.to_peer_id}`,
+            }));
+            break;
+          }
+
+          // ── Usuário clicou em ACEITAR no modal ──────────────────────────
+          case 'UI_TRADE_ACCEPT': {
+            const trade = state.pendingTrades.get(cmd.message_id);
+            if (!trade) {
+              ws.send(JSON.stringify({
+                type:    'UI_ERROR',
+                message: 'Proposta não encontrada (já expirou ou foi processada).',
+              }));
+              break;
+            }
+
+            // Verifica se ainda temos a figurinha a entregar
+            const haveIt = inventory.hasSticker(trade.want);
+            if (!haveIt || haveIt <= 0) {
+              ws.send(JSON.stringify({
+                type:    'UI_ERROR',
+                message: `Sem estoque de ${trade.want} para entregar.`,
+              }));
+              break;
+            }
+
+            // Monta TRADE_ACCEPT no formato do spec
+            const accept = {
+              type:             'TRADE_ACCEPT',
+              message_id:       uuidv4(),
+              origin_peer_id:   config.self.peer_id,
+              sender_peer_id:   config.self.peer_id,
+              receiver_peer_id: trade.from_peer,
+              offer_sticker_id: trade.want,   // o que NÓS entregamos
+              want_sticker_id:  trade.offer,  // o que NÓS recebemos
+            };
+
+            // Envia ao peer que fez a oferta via socket salvo
+            const peerSocket = trade.ws || (peers.getSocket ? peers.getSocket(trade.from_peer) : null);
+            if (peerSocket && peerSocket.readyState === WebSocket.OPEN) {
+              peerSocket.send(JSON.stringify(accept));
+            } else {
+              ws.send(JSON.stringify({
+                type:    'UI_ERROR',
+                message: `Peer ${trade.from_peer} desconectou antes de aceitar.`,
+              }));
+              state.pendingTrades.delete(cmd.message_id);
+              break;
+            }
+
+            // Atualiza inventário local
+            inventory.removeSticker(trade.want,  1);
+            inventory.addSticker(trade.offer, 1);
+            console.log(`[UI_TRADE_ACCEPT] Inventário: -1 ${trade.want}, +1 ${trade.offer}`);
+
+            // Registra no histórico
+            state.tradeHistory.push({
+              trade_id:  accept.message_id,
+              timestamp: new Date().toISOString(),
+              partner:   trade.from_peer,
+              gave:      trade.want,
+              received:  trade.offer,
+            });
+
+            state.pendingTrades.delete(cmd.message_id);
+
+            // Notifica o próprio browser
+            ws.send(JSON.stringify({
+              type:    'TRADE_ACCEPT',
+              message: `Troca aceita com ${trade.from_peer}!`,
+            }));
+            break;
+          }
+
+          // ── Usuário clicou em REJEITAR no modal ─────────────────────────
+          case 'UI_TRADE_REJECT': {
+            const trade = state.pendingTrades.get(cmd.message_id);
+            if (!trade) break;
+
+            const reject = {
+              type:             'TRADE_REJECT',
+              message_id:       uuidv4(),
+              origin_peer_id:   config.self.peer_id,
+              sender_peer_id:   config.self.peer_id,
+              receiver_peer_id: trade.from_peer,
+              offer_sticker_id: trade.offer,
+              want_sticker_id:  trade.want,
+            };
+
+            const peerSocket = trade.ws || (peers.getSocket ? peers.getSocket(trade.from_peer) : null);
+            if (peerSocket && peerSocket.readyState === WebSocket.OPEN) {
+              peerSocket.send(JSON.stringify(reject));
+            }
+
+            state.pendingTrades.delete(cmd.message_id);
+            console.log(`[UI_TRADE_REJECT] Troca com ${trade.from_peer} rejeitada`);
+
+            ws.send(JSON.stringify({
+              type:    'TRADE_REJECT',
+              message: `Troca com ${trade.from_peer} rejeitada.`,
             }));
             break;
           }
@@ -217,10 +290,9 @@ function startServer(config) {
       return;
     }
 
-    // ── Conexão P2P (outro nó) ────────────────────────────────────────────
+    // ── Conexão P2P (outro nó) ───────────────────────────────────────────
     console.log(`[SERVER] Nova conexão P2P de ${remoteIp}`);
 
-    // Registra temporariamente até receber HELLO com sender_peer_id
     const tempKey = remoteIp;
     peers.registerPeer(tempKey, ws, remoteIp, PORT);
 
@@ -233,7 +305,6 @@ function startServer(config) {
         return;
       }
 
-      // Se o primeiro HELLO chegar, promove chave temporária
       if (message.type === 'HELLO' && message.sender_peer_id) {
         peers.removePeer(tempKey);
         peers.registerPeer(message.sender_peer_id, ws, remoteIp, PORT);
