@@ -12,7 +12,8 @@
  * }
  *
  * Comportamento:
- * - Registra o peer no mapa de vizinhos
+ * - Registra o peer no mapa de vizinhos com host extraído do WebSocket
+ * - Salva o IP direto do remetente em peers.json
  * - Salva IPs recebidos no campo `peers` dentro de config/peers.json
  * - Responde com HELLO próprio (handshake bidirecional)
  */
@@ -23,11 +24,21 @@ const peers = require('../peers');
 function handle(message, ws, config) {
   const { sender_peer_id, peers: knownPeers } = message;
 
-  console.log(`[HELLO] Recebido de ${sender_peer_id || 'desconhecido'}: ${JSON.stringify(message)}`);
+  console.log(`[HELLO] Recebido de ${sender_peer_id || 'desconhecido'}`);
+
+  // Extrai IP do socket do remetente (conexão entrante)
+  const remoteIp = ws._socket && ws._socket.remoteAddress
+    ? ws._socket.remoteAddress.replace(/^::ffff:/, '') // normaliza IPv4-mapped IPv6
+    : null;
 
   if (sender_peer_id) {
-    peers.registerPeer(sender_peer_id, ws);
-    console.log(`[HELLO] Peer ${sender_peer_id} registrado`);
+    peers.registerPeer(sender_peer_id, ws, remoteIp, 8080);
+    console.log(`[HELLO] Peer ${sender_peer_id} registrado (IP: ${remoteIp || 'desconhecido'})`);
+
+    // Persiste o IP direto do remetente em peers.json
+    if (remoteIp) {
+      peers.saveKnownPeers([remoteIp]);
+    }
   } else {
     console.log(`[HELLO] HELLO sem sender_peer_id — conexão ativa por host:port`);
   }
