@@ -49,8 +49,6 @@
       pointer-events: none; z-index: 0;
     }
     .app { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 24px 20px 60px; }
-
-    /* HEADER */
     .header {
       display: flex; align-items: center; justify-content: space-between;
       flex-wrap: wrap; gap: 16px; margin-bottom: 32px;
@@ -71,8 +69,6 @@
     }
     .brand-text p { font-size: 0.78rem; color: var(--text-secondary); margin-top: 1px; }
     .header-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-
-    /* WS STATUS */
     .ws-dot {
       width: 9px; height: 9px; border-radius: 50%;
       background: #fc8181; display: inline-block; margin-right: 5px;
@@ -80,8 +76,6 @@
     }
     .ws-dot.connected { background: var(--accent-3); box-shadow: 0 0 6px var(--accent-3); animation: pulse 2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
-
-    /* BADGES */
     .badge {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 6px 12px; border-radius: 999px;
@@ -92,8 +86,6 @@
     .badge-green  { background: rgba(104,211,145,0.12); border-color: rgba(104,211,145,0.25); color: var(--accent-3); }
     .badge-purple { background: rgba(159,122,234,0.12); border-color: rgba(159,122,234,0.25); color: var(--accent-2); }
     .badge-warn   { background: rgba(246,173,85,0.12);  border-color: rgba(246,173,85,0.25);  color: var(--accent-warn); }
-
-    /* STATS */
     .status-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
     .stat-card {
       background: var(--bg-card); border: 1px solid var(--border);
@@ -116,8 +108,6 @@
     .stat-value.purple { color: var(--accent-2); }
     .stat-value.warn   { color: var(--accent-warn); }
     .stat-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 4px; }
-
-    /* BUSCA */
     .search-panel {
       background: var(--bg-card); border: 1px solid var(--border);
       border-radius: var(--radius-lg); padding: 24px; margin-bottom: 28px;
@@ -151,8 +141,6 @@
     .btn-green:hover  { background: rgba(104,211,145,0.25); }
     .btn-ghost  { background: rgba(255,255,255,0.04); border-color: var(--border); color: var(--text-secondary); }
     .btn-ghost:hover  { background: rgba(255,255,255,0.08); color: var(--text-primary); }
-
-    /* resultados da busca */
     .search-results { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
     .search-result-item {
       display: flex; align-items: center; gap: 14px;
@@ -163,24 +151,17 @@
       animation: fadeUp 0.3s ease both;
     }
     .result-sticker-img {
-      width: 64px; height: 64px; border-radius: 10px;
+      width: 64px; height: 80px; border-radius: 10px;
       object-fit: cover;
       background: var(--bg-surface);
       border: 1px solid var(--border);
       flex-shrink: 0;
-    }
-    /* placeholder enquanto imagem nao carrega */
-    .result-sticker-img.no-img {
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px; color: var(--text-muted);
     }
     .result-info { flex: 1; min-width: 0; }
     .result-id   { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
     .result-peer { font-size: 0.78rem; color: var(--text-secondary); }
     .result-qty  { font-size: 0.78rem; color: var(--accent-3); margin-top: 2px; }
     .result-local{ font-size: 0.7rem; color: var(--accent-warn); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-
-    /* spinner */
     .spinner {
       width: 18px; height: 18px; border: 2px solid rgba(99,179,237,0.3);
       border-top-color: var(--accent); border-radius: 50%;
@@ -188,8 +169,6 @@
     }
     .spinner.active { display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* GRID */
     .sections-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .section-full  { grid-column: 1 / -1; }
     @media (max-width: 768px) {
@@ -208,8 +187,6 @@
       display: flex; align-items: center; gap: 8px;
     }
     .panel-body { padding: 16px; }
-
-    /* ===== INVENTÁRIO ===== */
     .inv-filter {
       margin-bottom: 14px; padding: 10px 14px; width: 100%;
       background: rgba(255,255,255,0.05); border: 1px solid var(--border);
@@ -219,7 +196,6 @@
     }
     .inv-filter::placeholder { color: var(--text-muted); }
     .inv-filter:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,179,237,0.12); }
-
     .sticker-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -235,8 +211,6 @@
     .sticker-card:hover { border-color: var(--border-accent); transform: translateY(-3px); box-shadow: var(--shadow-glow); }
     .sticker-card.zero  { opacity: 0.45; }
     .sticker-card.own   { border-color: rgba(99,179,237,0.35); background: rgba(99,179,237,0.05); }
-
-    /* imagem real da figurinha no card */
     .sticker-img-wrap {
       width: 100%; aspect-ratio: 3/4;
       border-radius: 8px; overflow: hidden;
@@ -245,19 +219,14 @@
       display: flex; align-items: center; justify-content: center;
       position: relative;
     }
-    .sticker-img {
-      width: 100%; height: 100%; object-fit: cover;
-      transition: transform 0.3s ease;
-    }
+    .sticker-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
     .sticker-card:hover .sticker-img { transform: scale(1.04); }
-    /* fallback quando PNG ainda nao existe */
     .sticker-img-fallback {
       width: 100%; height: 100%;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 6px; font-size: 32px; color: var(--text-muted);
     }
     .sticker-img-fallback span { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
-
     .sticker-id  { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.05em; color: var(--text-primary); }
     .sticker-qty { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
     .qty-good { color: var(--accent-3); } .qty-mid { color: var(--accent); }
@@ -267,37 +236,29 @@
       position: absolute; top: 6px; right: 6px;
       font-size: 0.52rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--accent); background: rgba(99,179,237,0.18);
-      padding: 2px 6px; border-radius: 999px; border: 1px solid rgba(99,179,237,0.3);
-      z-index: 1;
+      padding: 2px 6px; border-radius: 999px; border: 1px solid rgba(99,179,237,0.3); z-index: 1;
     }
-
-    /* PEERS */
     .peer-list { display: flex; flex-direction: column; gap: 8px; }
     .peer-item {
       display: flex; align-items: center; gap: 12px;
       padding: 12px 14px; background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border); border-radius: var(--radius-sm);
-      transition: var(--transition);
+      border: 1px solid var(--border); border-radius: var(--radius-sm); transition: var(--transition);
     }
     .peer-item:hover { background: var(--bg-card-hover); }
     .peer-avatar {
       width: 36px; height: 36px; border-radius: 10px;
       background: linear-gradient(135deg, var(--accent-2), var(--accent));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
     }
     .peer-info { flex: 1; min-width: 0; }
-    .peer-id   { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .peer-id   { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
     .peer-host { font-size: 0.72rem; color: var(--text-secondary); font-family: monospace; margin-top: 1px; }
     .peer-status { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-3); box-shadow: 0 0 6px var(--accent-3); flex-shrink: 0; }
-
-    /* TROCAS */
     .trade-list { display: flex; flex-direction: column; gap: 8px; }
     .trade-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 14px; background: rgba(255,255,255,0.025);
-      border: 1px solid var(--border); border-radius: var(--radius-sm);
-      transition: var(--transition);
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+      background: rgba(255,255,255,0.025); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); transition: var(--transition);
     }
     .trade-item:hover { background: var(--bg-card-hover); }
     .trade-icon { width: 34px; height: 34px; border-radius: 9px; background: rgba(104,211,145,0.15); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
@@ -306,30 +267,21 @@
     .trade-desc .gave { color: var(--accent-danger); } .trade-desc .got { color: var(--accent-3); }
     .trade-meta { font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px; }
     .trade-time { font-size: 0.68rem; color: var(--text-muted); white-space: nowrap; font-family: monospace; flex-shrink: 0; }
-
-    /* EMPTY */
     .empty-state { text-align: center; padding: 32px 16px; color: var(--text-muted); }
     .empty-state-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
     .empty-state-text { font-size: 0.82rem; }
-
-    /* CONN ERROR */
     .conn-error {
-      display: none; align-items: center; gap: 10px;
-      padding: 12px 16px;
+      display: none; align-items: center; gap: 10px; padding: 12px 16px;
       background: rgba(252,129,129,0.08); border: 1px solid rgba(252,129,129,0.25);
       border-radius: var(--radius-sm); color: var(--accent-danger);
       font-size: 0.82rem; margin-bottom: 20px;
     }
     .conn-error.visible { display: flex; }
-
-    /* FOOTER */
     .footer {
       margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
       flex-wrap: wrap; gap: 8px; font-size: 0.72rem; color: var(--text-muted);
     }
-
-    /* TOAST */
     #toast {
       position: fixed; bottom: 24px; right: 24px;
       background: var(--bg-surface); border: 1px solid var(--border-accent);
@@ -340,17 +292,14 @@
       transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       z-index: 1000; max-width: 340px;
     }
-    #toast.show   { transform: translateY(0); opacity: 1; }
-    #toast.error  { border-color: rgba(252,129,129,0.4);  color: var(--accent-danger); }
-    #toast.success{ border-color: rgba(104,211,145,0.4);  color: var(--accent-3); }
-
+    #toast.show    { transform: translateY(0); opacity: 1; }
+    #toast.error   { border-color: rgba(252,129,129,0.4); color: var(--accent-danger); }
+    #toast.success { border-color: rgba(104,211,145,0.4); color: var(--accent-3); }
     @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
   </style>
 </head>
 <body>
 <div class="app">
-
-  <!-- HEADER -->
   <header class="header">
     <div class="header-brand">
       <div class="logo">🎴</div>
@@ -366,16 +315,14 @@
       </span>
       <span class="badge badge-blue">👤 <span id="peerIdLabel">—</span></span>
       <span class="badge badge-purple">🎴 <span id="stickerIdLabel">—</span></span>
-      <button class="btn btn-ghost" onclick="requestStatus()">&#8635; Atualizar</button>
+      <button class="btn btn-ghost" onclick="requestStatus()">↻ Atualizar</button>
     </div>
   </header>
 
-  <!-- ERRO DE CONEXÃO -->
   <div class="conn-error" id="connError">
     ⚠️ Sem conexão WebSocket — verifique se <code>node src/index.js</code> está rodando.
   </div>
 
-  <!-- STATS -->
   <div class="status-bar">
     <div class="stat-card blue">
       <div class="stat-label">Figurinhas</div>
@@ -399,15 +346,12 @@
     </div>
   </div>
 
-  <!-- BUSCA P2P -->
   <div class="search-panel">
     <h2>🔍 Busca P2P na Rede</h2>
     <div class="search-row">
-      <input
-        class="search-input" id="p2pSearchInput" type="text"
+      <input class="search-input" id="p2pSearchInput" type="text"
         placeholder="Ex: FIG-07"
-        onkeydown="if(event.key==='Enter') startSearch()"
-      />
+        onkeydown="if(event.key==='Enter') startSearch()" />
       <button class="btn btn-accent" id="searchBtn" onclick="startSearch()">
         <span class="spinner" id="searchSpinner"></span>
         🔎 Buscar na Rede
@@ -417,10 +361,7 @@
     <div class="search-results" id="searchResults"></div>
   </div>
 
-  <!-- GRID -->
   <div class="sections-grid">
-
-    <!-- INVENTÁRIO -->
     <div class="panel section-full">
       <div class="panel-header">
         <span class="panel-title">📦 Inventário</span>
@@ -432,33 +373,24 @@
         <div class="sticker-grid" id="stickerGrid"></div>
       </div>
     </div>
-
-    <!-- VIZINHOS -->
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">🌐 Vizinhos Conectados</span>
         <span class="badge badge-green" id="peersCount">0</span>
       </div>
-      <div class="panel-body">
-        <div class="peer-list" id="peerList"></div>
-      </div>
+      <div class="panel-body"><div class="peer-list" id="peerList"></div></div>
     </div>
-
-    <!-- HISTÓRICO DE TROCAS -->
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">🔄 Histórico de Trocas</span>
         <span class="badge badge-warn" id="tradesCount">0</span>
       </div>
-      <div class="panel-body">
-        <div class="trade-list" id="tradeList"></div>
-      </div>
+      <div class="panel-body"><div class="trade-list" id="tradeList"></div></div>
     </div>
-
   </div>
 
   <footer class="footer">
-    <span>Album P2P &mdash; Sistemas Distribuídos</span>
+    <span>Album P2P — Sistemas Distribuídos</span>
     <span>Atualizado: <span id="lastUpdate">—</span></span>
     <span>WebSocket em tempo real</span>
   </footer>
@@ -467,43 +399,30 @@
 <div id="toast"></div>
 
 <script>
-  // ─── Estado local ────────────────────────────────────────────────────────────
-  let ws            = null;
-  let allInventory  = [];
-  let ownSticker    = '';
-  let ownStickerUrl = '';
-  let toastTimer    = null;
+  // URL base das figurinhas (servidor do professor)
+  const STICKER_BASE = 'https://rgcoelho01.github.io/album/docs/images';
+
+  // Monta a URL de uma figurinha pelo ID
+  function stickerUrl(stickerId) {
+    const name = (stickerId || '').replace(/\.png$/i, '').toUpperCase();
+    return `${STICKER_BASE}/${name}.png`;
+  }
+
+  // HTML do card de imagem com fallback elegante
+  function stickerImgHtml(stickerId) {
+    const src = stickerUrl(stickerId);
+    return `<div class="sticker-img-wrap">
+      <img class="sticker-img" src="${src}" alt="${stickerId}" loading="lazy"
+        onerror="this.parentElement.innerHTML='<div class=sticker-img-fallback>\uD83C\uDFB4<span>${stickerId}</span></div>'" />
+    </div>`;
+  }
+
+  let ws             = null;
+  let allInventory   = [];
+  let ownSticker     = '';
+  let toastTimer     = null;
   let reconnectTimer = null;
 
-  // ─── Helpers de URL da figurinha ────────────────────────────────────────────
-  // Dado um sticker_id (FIG-24) tenta construir a URL do PNG.
-  // Se o servidor tiver sticker_url no status, usa ela.
-  // Para figurinhas de outros peers, usa a URL que veio no SEARCH_HIT.
-  const stickerUrlCache = {}; // sticker_id -> url conhecida
-
-  function getStickerUrl(stickerId, fallbackUrl) {
-    if (fallbackUrl) { stickerUrlCache[stickerId] = fallbackUrl; }
-    if (stickerUrlCache[stickerId]) return stickerUrlCache[stickerId];
-    // Assume que está na própria instância (figurinha autoral)
-    return `/images/${stickerId}.png`;
-  }
-
-  // Cria o HTML de imagem da figurinha com fallback elegante
-  function stickerImgHtml(stickerId, url) {
-    const src = getStickerUrl(stickerId, url);
-    return `
-      <div class="sticker-img-wrap">
-        <img
-          class="sticker-img"
-          src="${src}"
-          alt="${stickerId}"
-          loading="lazy"
-          onerror="this.parentElement.innerHTML='<div class=sticker-img-fallback>🎴<span>${stickerId}</span></div>'"
-        />
-      </div>`;
-  }
-
-  // ─── WebSocket ───────────────────────────────────────────────────────────────
   function connect() {
     ws = new WebSocket('ws://localhost:8080', ['ui']);
 
@@ -541,30 +460,22 @@
 
   function requestStatus() { send({ type: 'GET_STATUS' }); }
 
-  // ─── Roteador de mensagens ───────────────────────────────────────────────────
   function handleMessage(msg) {
     switch (msg.type) {
-      case 'STATUS':           renderAll(msg);          break;
-      case 'SEARCH_HIT':       renderSearchHit(msg);    break;
-      case 'SEARCH_STARTED':   onSearchStarted(msg);    break;
-      case 'TRADE_ACCEPT':     onTradeAccept(msg);      break;
-      case 'TRADE_REJECT':     onTradeReject(msg);      break;
-      case 'TRANSFER_CONFIRM': onTransferConfirm(msg);  break;
-      case 'UI_INFO':          showToast('ℹ️ ' + msg.message, 3000); break;
-      case 'UI_ERROR':         showToast('⚠️ ' + msg.message, 4000, 'error'); break;
+      case 'STATUS':           renderAll(msg);         break;
+      case 'SEARCH_HIT':       renderSearchHit(msg);   break;
+      case 'SEARCH_RESULT':    renderSearchHit(msg.hits ? msg.hits[0] : msg); break;
+      case 'SEARCH_STARTED':   onSearchStarted(msg);   break;
+      case 'TRADE_ACCEPT':     onTradeAccept(msg);     break;
+      case 'TRADE_REJECT':     onTradeReject(msg);     break;
+      case 'TRANSFER_CONFIRM': onTransferConfirm(msg); break;
+      case 'UI_INFO':          showToast('\u2139\uFE0F ' + msg.message, 3000);             break;
+      case 'UI_ERROR':         showToast('\u26A0\uFE0F ' + msg.message, 4000, 'error'); break;
     }
   }
 
-  // ─── Renderização principal ──────────────────────────────────────────────────
   function renderAll(data) {
-    ownSticker    = data.self?.sticker_id   || '';
-    ownStickerUrl = data.self?.sticker_url  || '';
-
-    // Guarda a URL da própria figurinha no cache
-    if (ownSticker && ownStickerUrl) {
-      stickerUrlCache[ownSticker] = ownStickerUrl;
-    }
-
+    ownSticker = data.self?.sticker_id || '';
     document.getElementById('peerIdLabel').textContent    = data.self?.peer_id    || '—';
     document.getElementById('stickerIdLabel').textContent = ownSticker            || '—';
     document.title = `${data.self?.peer_id || 'P2P'} — Album P2P`;
@@ -585,7 +496,6 @@
     document.getElementById('lastUpdate').textContent = ts.toLocaleTimeString('pt-BR');
   }
 
-  // ─── Grid de figurinhas com imagem real ─────────────────────────────────────
   function renderInventoryGrid(items) {
     const count = items.length;
     document.getElementById('inventoryCount').textContent = `${count} figurinha${count !== 1 ? 's' : ''}`;
@@ -599,7 +509,6 @@
       return;
     }
 
-    // Ordena: autoral primeiro, depois por quantidade desc
     const sorted = [...items].sort((a, b) => {
       if (a.sticker_id === ownSticker) return -1;
       if (b.sticker_id === ownSticker) return  1;
@@ -607,23 +516,13 @@
     });
 
     grid.innerHTML = sorted.map(s => {
-      const isOwn = s.sticker_id === ownSticker;
-      const qty   = s.quantity || 0;
+      const isOwn    = s.sticker_id === ownSticker;
+      const qty      = s.quantity || 0;
       const qtyClass = qty === 0 ? 'qty-zero' : qty <= 3 ? 'qty-low' : qty <= 10 ? 'qty-mid' : 'qty-good';
-      // URL: usa cache (populado pelo sticker_url do status ou de buscas) ou caminho local
-      const imgUrl = getStickerUrl(s.sticker_id);
 
       return `<div class="sticker-card ${isOwn ? 'own' : ''} ${qty === 0 ? 'zero' : ''}" title="${s.sticker_id} — ${qty} cópia(s)">
         ${isOwn ? '<span class="own-pill">AUTORAL</span>' : ''}
-        <div class="sticker-img-wrap">
-          <img
-            class="sticker-img"
-            src="${imgUrl}"
-            alt="${s.sticker_id}"
-            loading="lazy"
-            onerror="this.parentElement.innerHTML='<div class=sticker-img-fallback>🎴<span>${s.sticker_id}</span></div>'"
-          />
-        </div>
+        ${stickerImgHtml(s.sticker_id)}
         <div class="sticker-id">${s.sticker_id}</div>
         <div class="sticker-qty ${qtyClass}">${qty}</div>
         <div class="sticker-label">${qty === 1 ? 'cópia' : 'cópias'}</div>
@@ -637,7 +536,6 @@
     renderInventoryGrid(filtered);
   }
 
-  // ─── Peers ───────────────────────────────────────────────────────────────────
   function renderPeers(list) {
     document.getElementById('peersCount').textContent = list.length;
     const el = document.getElementById('peerList');
@@ -656,7 +554,6 @@
       </div>`).join('');
   }
 
-  // ─── Trocas ──────────────────────────────────────────────────────────────────
   function renderTrades(history) {
     document.getElementById('tradesCount').textContent = history.length;
     const el = document.getElementById('tradeList');
@@ -677,14 +574,13 @@
     }).join('');
   }
 
-  // ─── Busca P2P ───────────────────────────────────────────────────────────────
   let activeSearchId = null;
 
   function startSearch() {
     const input     = document.getElementById('p2pSearchInput');
     const stickerId = input.value.trim().toUpperCase();
-    if (!stickerId) { showToast('⚠️ Digite o ID (ex: FIG-07)', 3000, 'error'); return; }
-    if (!ws || ws.readyState !== WebSocket.OPEN) { showToast('⚠️ Sem conexão', 3000, 'error'); return; }
+    if (!stickerId)                               { showToast('⚠️ Digite o ID (ex: FIG-07)', 3000, 'error'); return; }
+    if (!ws || ws.readyState !== WebSocket.OPEN)  { showToast('⚠️ Sem conexão', 3000, 'error'); return; }
     document.getElementById('searchResults').innerHTML = '';
     document.getElementById('searchSpinner').classList.add('active');
     document.getElementById('searchBtn').disabled = true;
@@ -710,43 +606,38 @@
   }
 
   function renderSearchHit(msg) {
+    if (!msg) return;
     stopSearchSpinner();
-    activeSearchId = null;
 
-    // Guarda a URL recebida no cache para uso futuro
-    if (msg.sticker_url) stickerUrlCache[msg.sticker_id] = msg.sticker_url;
-
-    const results = document.getElementById('searchResults');
-    const waiting = results.querySelector('div:not([data-hit])');
+    const results  = document.getElementById('searchResults');
+    const waiting  = results.querySelector('div:not([data-hit])');
     if (waiting) waiting.remove();
 
-    const imgSrc     = getStickerUrl(msg.sticker_id, msg.sticker_url);
-    const localBadge = msg.local ? '<span class="result-local">✓ no seu nó</span>' : '';
+    // Compatibilidade: o backend pode enviar peer_id ou responder_id
+    const peerId     = msg.peer_id || msg.responder_id || msg.origin_peer_id || '?';
+    const stickerId  = msg.sticker_id || '?';
+    const qty        = msg.quantity != null ? msg.quantity : '?';
+    const isLocal    = !!msg.local;
 
     const item = document.createElement('div');
-    item.className     = 'search-result-item';
-    item.dataset.hit   = msg.query_id || '1';
+    item.className   = 'search-result-item';
+    item.dataset.hit = msg.query_id || '1';
     item.innerHTML = `
-      <img
-        class="result-sticker-img"
-        src="${imgSrc}"
-        alt="${msg.sticker_id}"
-        loading="lazy"
-        onerror="this.style.display='none'"
-      />
+      <img class="result-sticker-img" src="${stickerUrl(stickerId)}" alt="${stickerId}" loading="lazy"
+        onerror="this.style.display='none'" />
       <div class="result-info">
-        <div class="result-id">${msg.sticker_id}</div>
-        <div class="result-peer">📍 ${msg.responder_id}</div>
-        <div class="result-qty">${msg.quantity} cópia(s) disponível(is)</div>
-        ${localBadge}
+        <div class="result-id">${stickerId}</div>
+        <div class="result-peer">📍 ${peerId}</div>
+        <div class="result-qty">${qty} cópia(s) disponível(is)</div>
+        ${isLocal ? '<span class="result-local">✓ no seu nó</span>' : ''}
       </div>
-      ${!msg.local ? `
-      <button class="btn btn-green" onclick="openTradeOffer('${msg.responder_id}','${msg.sticker_id}')">
+      ${!isLocal ? `
+      <button class="btn btn-green" onclick="openTradeOffer('${peerId}','${stickerId}')">
         🤝 Propor Troca
       </button>` : ''}
     `;
     results.appendChild(item);
-    showToast(`🎯 ${msg.sticker_id} encontrada em ${msg.responder_id}!`, 3000, 'success');
+    showToast(`🎯 ${stickerId} encontrada em ${peerId}!`, 3000, 'success');
   }
 
   function stopSearchSpinner() {
@@ -761,37 +652,37 @@
     activeSearchId = null;
   }
 
-  // ─── Troca ───────────────────────────────────────────────────────────────────
   function openTradeOffer(toPeer, wantedSticker) {
     if (!allInventory.length) { showToast('⚠️ Inventário vazio', 3000, 'error'); return; }
-    const mySticker = ownSticker || allInventory[0]?.sticker_id;
+    const available = allInventory.filter(s => s.quantity > 0);
+    const mySticker = ownSticker || available[0]?.sticker_id;
     const offered   = prompt(
-      `Você quer ${wantedSticker} de ${toPeer}.\nQual figurinha você vai oferecer?\nInventário: ${allInventory.filter(s=>s.quantity>0).map(s=>s.sticker_id).join(', ')}`,
+      `Você quer ${wantedSticker} de ${toPeer}.\nQual figurinha vai oferecer?\nDisponíveis: ${available.map(s => s.sticker_id).join(', ')}`,
       mySticker
     );
     if (!offered) return;
+    // Campos exatos que o server.js espera
     send({
-      type:            'UI_TRADE_OFFER',
-      to_peer_id:      toPeer,
-      offered_sticker: offered.trim().toUpperCase(),
-      wanted_sticker:  wantedSticker,
+      type:             'UI_TRADE_OFFER',
+      to_peer_id:       toPeer,
+      offer_sticker_id: offered.trim().toUpperCase(),
+      want_sticker_id:  wantedSticker,
     });
+    showToast(`🤝 Proposta enviada para ${toPeer}`, 2500, 'success');
   }
 
-  function onTradeAccept(msg)     { showToast(`✅ Troca aceita por ${msg.from_peer_id}!`, 4000, 'success'); requestStatus(); }
-  function onTradeReject(msg)     { showToast(`❌ Troca recusada por ${msg.from_peer_id || '?'}`, 4000, 'error'); }
+  function onTradeAccept(msg)     { showToast('✅ Troca aceita!', 4000, 'success'); requestStatus(); }
+  function onTradeReject(msg)     { showToast('❌ Troca recusada', 4000, 'error'); }
   function onTransferConfirm(msg) { showToast('🔄 Inventário atualizado após troca!', 3000, 'success'); requestStatus(); }
 
-  // ─── Toast ───────────────────────────────────────────────────────────────────
   function showToast(msg, duration = 3000, type = '') {
     const t = document.getElementById('toast');
     t.textContent = msg;
-    t.className = 'show' + (type ? ' ' + type : '');
+    t.className   = 'show' + (type ? ' ' + type : '');
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.className = '', duration);
   }
 
-  // ─── Init ────────────────────────────────────────────────────────────────────
   connect();
   setInterval(requestStatus, 5000);
   document.addEventListener('keydown', e => {
