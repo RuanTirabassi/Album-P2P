@@ -5,6 +5,7 @@
  * Envia HELLO no formato oficial do spec ao conectar.
  * Registra vizinho por host:port imediatamente — não depende do HELLO de resposta.
  * Se o vizinho responder com HELLO (sender_peer_id), promove para peer_id real.
+ * Persiste IPs novos em peers.json automaticamente.
  */
 
 const { v4: uuidv4 } = require('uuid');
@@ -31,19 +32,27 @@ function connectToNeighbor(host, port, config) {
   ws.on('open', () => {
     console.log(`[CLIENT] Conectado a ${host}:${port}`);
 
-    // Registra imediatamente com chave temporária para broadcast funcionar
+    // Registra imediatamente com chave temporária
     peers.registerPeer(tempKey, ws, host, port);
+
+    // Persiste o IP do vizinho que acabamos de conectar
+    peers.saveKnownPeers([host]);
+
+    // Monta lista de IPs conhecidos para compartilhar no HELLO
+    const knownIps = peers.getPeerList()
+      .map(p => p.host)
+      .filter(h => h && h !== 'null' && h !== 'localhost' && h !== host);
 
     // Envia HELLO no formato oficial do spec
     const helloMessage = {
-      type: 'HELLO',
-      message_id: uuidv4(),
+      type:           'HELLO',
+      message_id:     uuidv4(),
       sender_peer_id: config.self.peer_id,
-      peers: [],
+      peers:          knownIps,
     };
 
     ws.send(JSON.stringify(helloMessage));
-    console.log(`[CLIENT] HELLO enviado para ${host}:${port}`);
+    console.log(`[CLIENT] HELLO enviado para ${host}:${port} (${knownIps.length} vizinho(s) compartilhado(s))`);
   });
 
   ws.on('message', (data) => {
@@ -60,6 +69,12 @@ function connectToNeighbor(host, port, config) {
       peers.removePeer(tempKey);
       peers.registerPeer(message.sender_peer_id, ws, host, port);
       console.log(`[CLIENT] Vizinho identificado: ${message.sender_peer_id} (${host}:${port})`);
+
+      // Persiste IPs de 2º grau que o vizinho nos mandou
+      if (Array.isArray(message.peers) && message.peers.length > 0) {
+        peers.saveKnownPeers(message.peers);
+        console.log(`[CLIENT] ${message.peers.length} IP(s) de 2º grau salvos via HELLO de ${message.sender_peer_id}`);
+      }
     }
 
     messageHandler.handle(message, ws, config);
@@ -76,4 +91,4 @@ function connectToNeighbor(host, port, config) {
   });
 }
 
-module.exports = { connectToNeighbors };
+module.exports = { connectToNeighbors, connectToNeighbor };
