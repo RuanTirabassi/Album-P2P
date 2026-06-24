@@ -399,22 +399,40 @@
 <div id="toast"></div>
 
 <script>
-  // URL base das figurinhas (servidor do professor)
-  const STICKER_BASE = 'https://rgcoelho01.github.io/album/docs/images';
-
-  // Monta a URL de uma figurinha pelo ID
-  function stickerUrl(stickerId) {
-    const name = (stickerId || '').replace(/\.png$/i, '').toUpperCase();
-    return `${STICKER_BASE}/${name}.png`;
+  /**
+   * Monta a URL pública de uma figurinha.
+   * Garante: sem .png duplicado, sem extensão em maiúsculo, sempre termina em .png
+   * Exemplos:
+   *   'FIG-22'     -> https://rgcoelho01.github.io/album/docs/images/FIG-22.png
+   *   'FIG-22.png' -> https://rgcoelho01.github.io/album/docs/images/FIG-22.png
+   *   'FIG-22.PNG' -> https://rgcoelho01.github.io/album/docs/images/FIG-22.png
+   *   'fig-22'     -> https://rgcoelho01.github.io/album/docs/images/FIG-22.png
+   */
+  function stickerUrl(rawId) {
+    // Remove extensão existente (qualquer capitalização) e normaliza para maiúsculas
+    const clean = (rawId || '').replace(/\.png$/i, '').toUpperCase().trim();
+    return 'https://rgcoelho01.github.io/album/docs/images/' + clean + '.png';
   }
 
-  // HTML do card de imagem com fallback elegante
-  function stickerImgHtml(stickerId) {
-    const src = stickerUrl(stickerId);
-    return `<div class="sticker-img-wrap">
-      <img class="sticker-img" src="${src}" alt="${stickerId}" loading="lazy"
-        onerror="this.parentElement.innerHTML='<div class=sticker-img-fallback>\uD83C\uDFB4<span>${stickerId}</span></div>'" />
-    </div>`;
+  // Cria elemento <img> com fallback via JS (evita problemas de template literal no onerror)
+  function makeStickerImg(stickerId) {
+    const wrap = document.createElement('div');
+    wrap.className = 'sticker-img-wrap';
+
+    const img = document.createElement('img');
+    img.className = 'sticker-img';
+    img.src       = stickerUrl(stickerId);
+    img.alt       = stickerId;
+    img.loading   = 'lazy';
+    img.onerror   = function() {
+      const fb = document.createElement('div');
+      fb.className = 'sticker-img-fallback';
+      fb.innerHTML = '🎴<span>' + stickerId + '</span>';
+      wrap.replaceChild(fb, img);
+    };
+
+    wrap.appendChild(img);
+    return wrap;
   }
 
   let ws             = null;
@@ -425,7 +443,6 @@
 
   function connect() {
     ws = new WebSocket('ws://localhost:8080', ['ui']);
-
     ws.onopen = () => {
       document.getElementById('wsDot').classList.add('connected');
       document.getElementById('wsStatus').textContent = 'conectado';
@@ -433,13 +450,11 @@
       if (reconnectTimer) { clearInterval(reconnectTimer); reconnectTimer = null; }
       showToast('✅ Conectado ao nó P2P', 1500, 'success');
     };
-
     ws.onmessage = (event) => {
       let msg;
       try { msg = JSON.parse(event.data); } catch { return; }
       handleMessage(msg);
     };
-
     ws.onclose = () => {
       document.getElementById('wsDot').classList.remove('connected');
       document.getElementById('wsStatus').textContent = 'desconectado';
@@ -450,7 +465,6 @@
         }, 3000);
       }
     };
-
     ws.onerror = () => {};
   }
 
@@ -469,16 +483,16 @@
       case 'TRADE_ACCEPT':     onTradeAccept(msg);     break;
       case 'TRADE_REJECT':     onTradeReject(msg);     break;
       case 'TRANSFER_CONFIRM': onTransferConfirm(msg); break;
-      case 'UI_INFO':          showToast('\u2139\uFE0F ' + msg.message, 3000);             break;
-      case 'UI_ERROR':         showToast('\u26A0\uFE0F ' + msg.message, 4000, 'error'); break;
+      case 'UI_INFO':          showToast('ℹ️ ' + msg.message, 3000);            break;
+      case 'UI_ERROR':         showToast('⚠️ ' + msg.message, 4000, 'error'); break;
     }
   }
 
   function renderAll(data) {
     ownSticker = data.self?.sticker_id || '';
-    document.getElementById('peerIdLabel').textContent    = data.self?.peer_id    || '—';
-    document.getElementById('stickerIdLabel').textContent = ownSticker            || '—';
-    document.title = `${data.self?.peer_id || 'P2P'} — Album P2P`;
+    document.getElementById('peerIdLabel').textContent    = data.self?.peer_id || '—';
+    document.getElementById('stickerIdLabel').textContent = ownSticker         || '—';
+    document.title = (data.self?.peer_id || 'P2P') + ' — Album P2P';
 
     const inv   = data.inventory || [];
     const total = inv.reduce((s, x) => s + (x.quantity || 0), 0);
@@ -498,14 +512,18 @@
 
   function renderInventoryGrid(items) {
     const count = items.length;
-    document.getElementById('inventoryCount').textContent = `${count} figurinha${count !== 1 ? 's' : ''}`;
+    document.getElementById('inventoryCount').textContent =
+      count + ' figurinha' + (count !== 1 ? 's' : '');
     const grid = document.getElementById('stickerGrid');
+    grid.innerHTML = '';
 
     if (!count) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-        <div class="empty-state-icon">🎴</div>
-        <div class="empty-state-text">Inventário vazio — verifique o config/inventory.json</div>
-      </div>`;
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.style.gridColumn = '1/-1';
+      empty.innerHTML = '<div class="empty-state-icon">🎴</div>' +
+                        '<div class="empty-state-text">Inventário vazio — verifique o config/inventory.json</div>';
+      grid.appendChild(empty);
       return;
     }
 
@@ -515,19 +533,42 @@
       return b.quantity - a.quantity;
     });
 
-    grid.innerHTML = sorted.map(s => {
+    sorted.forEach(s => {
       const isOwn    = s.sticker_id === ownSticker;
       const qty      = s.quantity || 0;
       const qtyClass = qty === 0 ? 'qty-zero' : qty <= 3 ? 'qty-low' : qty <= 10 ? 'qty-mid' : 'qty-good';
 
-      return `<div class="sticker-card ${isOwn ? 'own' : ''} ${qty === 0 ? 'zero' : ''}" title="${s.sticker_id} — ${qty} cópia(s)">
-        ${isOwn ? '<span class="own-pill">AUTORAL</span>' : ''}
-        ${stickerImgHtml(s.sticker_id)}
-        <div class="sticker-id">${s.sticker_id}</div>
-        <div class="sticker-qty ${qtyClass}">${qty}</div>
-        <div class="sticker-label">${qty === 1 ? 'cópia' : 'cópias'}</div>
-      </div>`;
-    }).join('');
+      const card = document.createElement('div');
+      card.className = 'sticker-card' + (isOwn ? ' own' : '') + (qty === 0 ? ' zero' : '');
+      card.title     = s.sticker_id + ' — ' + qty + ' cópia(s)';
+
+      if (isOwn) {
+        const pill = document.createElement('span');
+        pill.className   = 'own-pill';
+        pill.textContent = 'AUTORAL';
+        card.appendChild(pill);
+      }
+
+      // Imagem via DOM (evita problemas de escape no onerror)
+      card.appendChild(makeStickerImg(s.sticker_id));
+
+      const idEl = document.createElement('div');
+      idEl.className   = 'sticker-id';
+      idEl.textContent = s.sticker_id;
+
+      const qtyEl = document.createElement('div');
+      qtyEl.className   = 'sticker-qty ' + qtyClass;
+      qtyEl.textContent = qty;
+
+      const labelEl = document.createElement('div');
+      labelEl.className   = 'sticker-label';
+      labelEl.textContent = qty === 1 ? 'cópia' : 'cópias';
+
+      card.appendChild(idEl);
+      card.appendChild(qtyEl);
+      card.appendChild(labelEl);
+      grid.appendChild(card);
+    });
   }
 
   function filterInventory() {
@@ -540,37 +581,40 @@
     document.getElementById('peersCount').textContent = list.length;
     const el = document.getElementById('peerList');
     if (!list.length) {
-      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📡</div><div class="empty-state-text">Nenhum vizinho conectado</div></div>`;
+      el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📡</div>' +
+                     '<div class="empty-state-text">Nenhum vizinho conectado</div></div>';
       return;
     }
-    el.innerHTML = list.map(p => `
-      <div class="peer-item">
-        <div class="peer-avatar">👤</div>
-        <div class="peer-info">
-          <div class="peer-id">${p.peer_id}</div>
-          <div class="peer-host">${p.host || '?'}:${p.port || 8080}</div>
-        </div>
-        <div class="peer-status"></div>
-      </div>`).join('');
+    el.innerHTML = list.map(p =>
+      '<div class="peer-item">' +
+        '<div class="peer-avatar">👤</div>' +
+        '<div class="peer-info">' +
+          '<div class="peer-id">' + p.peer_id + '</div>' +
+          '<div class="peer-host">' + (p.host || '?') + ':' + (p.port || 8080) + '</div>' +
+        '</div>' +
+        '<div class="peer-status"></div>' +
+      '</div>'
+    ).join('');
   }
 
   function renderTrades(history) {
     document.getElementById('tradesCount').textContent = history.length;
     const el = document.getElementById('tradeList');
     if (!history.length) {
-      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🤝</div><div class="empty-state-text">Nenhuma troca ainda</div></div>`;
+      el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🤝</div>' +
+                     '<div class="empty-state-text">Nenhuma troca ainda</div></div>';
       return;
     }
     el.innerHTML = [...history].reverse().slice(0, 20).map(t => {
       const ts = new Date(t.timestamp);
-      return `<div class="trade-item">
-        <div class="trade-icon">🔄</div>
-        <div class="trade-info">
-          <div class="trade-desc">Dei <span class="gave">${t.gave}</span> → recebi <span class="got">${t.received}</span></div>
-          <div class="trade-meta">parceiro: ${t.partner}</div>
-        </div>
-        <div class="trade-time">${ts.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
-      </div>`;
+      return '<div class="trade-item">' +
+        '<div class="trade-icon">🔄</div>' +
+        '<div class="trade-info">' +
+          '<div class="trade-desc">Dei <span class="gave">' + t.gave + '</span> → recebi <span class="got">' + t.received + '</span></div>' +
+          '<div class="trade-meta">parceiro: ' + t.partner + '</div>' +
+        '</div>' +
+        '<div class="trade-time">' + ts.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) + '</div>' +
+      '</div>';
     }).join('');
   }
 
@@ -579,8 +623,8 @@
   function startSearch() {
     const input     = document.getElementById('p2pSearchInput');
     const stickerId = input.value.trim().toUpperCase();
-    if (!stickerId)                               { showToast('⚠️ Digite o ID (ex: FIG-07)', 3000, 'error'); return; }
-    if (!ws || ws.readyState !== WebSocket.OPEN)  { showToast('⚠️ Sem conexão', 3000, 'error'); return; }
+    if (!stickerId)                              { showToast('⚠️ Digite o ID (ex: FIG-07)', 3000, 'error'); return; }
+    if (!ws || ws.readyState !== WebSocket.OPEN) { showToast('⚠️ Sem conexão', 3000, 'error'); return; }
     document.getElementById('searchResults').innerHTML = '';
     document.getElementById('searchSpinner').classList.add('active');
     document.getElementById('searchBtn').disabled = true;
@@ -590,17 +634,15 @@
   function onSearchStarted(msg) {
     activeSearchId = msg.query_id;
     document.getElementById('searchResults').innerHTML =
-      `<div style="color:var(--text-secondary);font-size:.82rem;padding:10px 0">
-         ⏳ Buscando <strong>${msg.sticker_id}</strong> na rede… (TTL máximo: 7 hops)
-       </div>`;
-    setTimeout(() => {
+      '<div style="color:var(--text-secondary);font-size:.82rem;padding:10px 0">' +
+      '⏳ Buscando <strong>' + msg.sticker_id + '</strong> na rede… (TTL máximo: 7 hops)</div>';
+    setTimeout(function() {
       if (activeSearchId !== msg.query_id) return;
       stopSearchSpinner();
       const r = document.getElementById('searchResults');
       if (!r.querySelector('[data-hit]')) {
-        r.innerHTML = `<div style="color:var(--accent-warn);font-size:.82rem;padding:10px 0">
-          ❌ <strong>${msg.sticker_id}</strong> não encontrada na rede (TTL esgotado).
-        </div>`;
+        r.innerHTML = '<div style="color:var(--accent-warn);font-size:.82rem;padding:10px 0">' +
+          '❌ <strong>' + msg.sticker_id + '</strong> não encontrada na rede.</div>';
       }
     }, 10000);
   }
@@ -609,35 +651,47 @@
     if (!msg) return;
     stopSearchSpinner();
 
-    const results  = document.getElementById('searchResults');
-    const waiting  = results.querySelector('div:not([data-hit])');
+    const results = document.getElementById('searchResults');
+    const waiting = results.querySelector('div:not([data-hit])');
     if (waiting) waiting.remove();
 
-    // Compatibilidade: o backend pode enviar peer_id ou responder_id
-    const peerId     = msg.peer_id || msg.responder_id || msg.origin_peer_id || '?';
-    const stickerId  = msg.sticker_id || '?';
-    const qty        = msg.quantity != null ? msg.quantity : '?';
-    const isLocal    = !!msg.local;
+    const peerId    = msg.peer_id || msg.responder_id || msg.origin_peer_id || '?';
+    const stickerId = msg.sticker_id || '?';
+    const qty       = msg.quantity != null ? msg.quantity : '?';
+    const isLocal   = !!msg.local;
 
     const item = document.createElement('div');
     item.className   = 'search-result-item';
     item.dataset.hit = msg.query_id || '1';
-    item.innerHTML = `
-      <img class="result-sticker-img" src="${stickerUrl(stickerId)}" alt="${stickerId}" loading="lazy"
-        onerror="this.style.display='none'" />
-      <div class="result-info">
-        <div class="result-id">${stickerId}</div>
-        <div class="result-peer">📍 ${peerId}</div>
-        <div class="result-qty">${qty} cópia(s) disponível(is)</div>
-        ${isLocal ? '<span class="result-local">✓ no seu nó</span>' : ''}
-      </div>
-      ${!isLocal ? `
-      <button class="btn btn-green" onclick="openTradeOffer('${peerId}','${stickerId}')">
-        🤝 Propor Troca
-      </button>` : ''}
-    `;
+
+    // Imagem via DOM
+    const img = document.createElement('img');
+    img.className = 'result-sticker-img';
+    img.src       = stickerUrl(stickerId);
+    img.alt       = stickerId;
+    img.loading   = 'lazy';
+    img.onerror   = function() { this.style.display = 'none'; };
+    item.appendChild(img);
+
+    const info = document.createElement('div');
+    info.className = 'result-info';
+    info.innerHTML =
+      '<div class="result-id">' + stickerId + '</div>' +
+      '<div class="result-peer">📍 ' + peerId + '</div>' +
+      '<div class="result-qty">' + qty + ' cópia(s) disponível(is)</div>' +
+      (isLocal ? '<span class="result-local">✓ no seu nó</span>' : '');
+    item.appendChild(info);
+
+    if (!isLocal) {
+      const btn = document.createElement('button');
+      btn.className   = 'btn btn-green';
+      btn.textContent = '🤝 Propor Troca';
+      btn.onclick     = function() { openTradeOffer(peerId, stickerId); };
+      item.appendChild(btn);
+    }
+
     results.appendChild(item);
-    showToast(`🎯 ${stickerId} encontrada em ${peerId}!`, 3000, 'success');
+    showToast('🎯 ' + stickerId + ' encontrada em ' + peerId + '!', 3000, 'success');
   }
 
   function stopSearchSpinner() {
@@ -655,39 +709,42 @@
   function openTradeOffer(toPeer, wantedSticker) {
     if (!allInventory.length) { showToast('⚠️ Inventário vazio', 3000, 'error'); return; }
     const available = allInventory.filter(s => s.quantity > 0);
-    const mySticker = ownSticker || available[0]?.sticker_id;
+    const mySticker = ownSticker || (available[0] && available[0].sticker_id);
     const offered   = prompt(
-      `Você quer ${wantedSticker} de ${toPeer}.\nQual figurinha vai oferecer?\nDisponíveis: ${available.map(s => s.sticker_id).join(', ')}`,
+      'Você quer ' + wantedSticker + ' de ' + toPeer + '.\nQual figurinha vai oferecer?\nDisponíveis: ' +
+      available.map(s => s.sticker_id).join(', '),
       mySticker
     );
     if (!offered) return;
-    // Campos exatos que o server.js espera
     send({
       type:             'UI_TRADE_OFFER',
       to_peer_id:       toPeer,
       offer_sticker_id: offered.trim().toUpperCase(),
       want_sticker_id:  wantedSticker,
     });
-    showToast(`🤝 Proposta enviada para ${toPeer}`, 2500, 'success');
+    showToast('🤝 Proposta enviada para ' + toPeer, 2500, 'success');
   }
 
   function onTradeAccept(msg)     { showToast('✅ Troca aceita!', 4000, 'success'); requestStatus(); }
   function onTradeReject(msg)     { showToast('❌ Troca recusada', 4000, 'error'); }
   function onTransferConfirm(msg) { showToast('🔄 Inventário atualizado após troca!', 3000, 'success'); requestStatus(); }
 
-  function showToast(msg, duration = 3000, type = '') {
+  function showToast(msg, duration, type) {
+    duration = duration || 3000;
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.className   = 'show' + (type ? ' ' + type : '');
     if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.className = '', duration);
+    toastTimer = setTimeout(function() { t.className = ''; }, duration);
   }
 
   connect();
   setInterval(requestStatus, 5000);
-  document.addEventListener('keydown', e => {
+  document.addEventListener('keydown', function(e) {
     if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
-      e.preventDefault(); requestStatus(); showToast('🔄 Atualizado!', 1200, 'success');
+      e.preventDefault();
+      requestStatus();
+      showToast('🔄 Atualizado!', 1200, 'success');
     }
   });
 </script>
