@@ -2,98 +2,110 @@
  * peers.js
  *
  * Gerencia o mapa de vizinhos conectados ao nó P2P.
- * Mantém um registro de todos os peers identificados via HELLO,
- * associando cada peer_id à sua conexão WebSocket ativa.
- *
- * Oferece funções para registrar, remover, buscar e enviar mensagens
- * para vizinhos individualmente ou em broadcast.
- *
- * Usado por: server.js, client.js, handlers/search.js, handlers/tradeOffer.js,
- *            handlers/tradeAccept.js, cli.js
+ * Também persiste IPs conhecidos (diretos e de 2º grau via HELLO) em peers.json.
  */
 
+const fs   = require('fs');
+const path = require('path');
+
+const PEERS_CONFIG_PATH = path.join(__dirname, '..', 'config', 'peers.json');
+
 // Map de peer_id → { ws, host, port }
-// Representa todos os vizinhos que já enviaram HELLO e estão conectados
 const connectedPeers = new Map();
 
-// Registra um peer identificado no mapa de vizinhos conectados.
-// peer_id: string no formato ALUNO-YY
-// ws: instância WebSocket da conexão ativa
-// host: string — endereço IP do peer (pode ser undefined para conexões entrantes)
-// port: number — porta do peer (padrão 8080)
+// Registra um peer no mapa
 function registerPeer(peer_id, ws, host = null, port = 8080) {
   connectedPeers.set(peer_id, { ws, host, port });
-  console.log(`[PEERS] Peer ${peer_id} registrado (${host || "conexão entrante"}:${port})`);
+  console.log(`[PEERS] Peer ${peer_id} registrado (${host || 'conexão entrante'}:${port})`);
 }
 
-// Remove um peer do mapa de vizinhos conectados.
-// Chamado quando a conexão WebSocket é encerrada.
-// peer_id: string no formato ALUNO-YY
+// Remove um peer do mapa
 function removePeer(peer_id) {
   if (connectedPeers.has(peer_id)) {
     connectedPeers.delete(peer_id);
-    console.log(`[PEERS] Peer ${peer_id} removido da lista de conectados`);
+    console.log(`[PEERS] Peer ${peer_id} removido`);
   }
 }
 
-// Retorna o objeto de conexão { ws, host, port } de um peer específico.
-// peer_id: string no formato ALUNO-YY
-// Retorna: { ws, host, port } ou undefined se não encontrado
-function getPeer(peer_id) {
-  return connectedPeers.get(peer_id);
+function getPeer(peer_id)        { return connectedPeers.get(peer_id); }
+function listPeers()             { return Array.from(connectedPeers.keys()); }
+function getConnectedPeers()     { return connectedPeers; }
+
+// Retorna o WebSocket de um peer (alias para uso no server.js)
+function getSocket(peer_id) {
+  const p = connectedPeers.get(peer_id);
+  return p ? p.ws : null;
 }
 
-// Envia uma mensagem JSON para todos os peers conectados, exceto o peer excluído.
-// Usado na propagação de SEARCH para evitar retornar a mensagem ao remetente.
-// message: objeto JavaScript (será serializado para JSON)
-// excludePeerId: string — peer_id que não deve receber a mensagem (pode ser null)
+// Retorna lista de { peer_id, host, port } para o dashboard
+function getPeerList() {
+  return Array.from(connectedPeers.entries()).map(([peer_id, { host, port }]) => ({ peer_id, host, port }));
+}
+
+// Broadcast para todos exceto excludePeerId
 function broadcast(message, excludePeerId = null) {
   const json = JSON.stringify(message);
-
   for (const [peerId, peer] of connectedPeers) {
-    // Pula o peer excluído (geralmente o remetente da mensagem)
     if (peerId === excludePeerId) continue;
-
-    // Só envia se o WebSocket estiver no estado OPEN
-    if (peer.ws.readyState === peer.ws.OPEN) {
-      peer.ws.send(json);
-    }
+    if (peer.ws.readyState === peer.ws.OPEN) peer.ws.send(json);
   }
 }
 
-// Envia uma mensagem JSON para um peer específico.
-// peer_id: string no formato ALUNO-YY
-// message: objeto JavaScript (será serializado para JSON)
-// Retorna: true se enviado com sucesso, false se peer não encontrado ou desconectado
+// Envia para um peer específico. Retorna true se enviado.
 function sendTo(peer_id, message) {
   const peer = connectedPeers.get(peer_id);
-
   if (!peer) {
-    console.warn(`[PEERS] Tentativa de enviar para peer desconhecido: ${peer_id}`);
+    console.warn(`[PEERS] Peer desconhecido: ${peer_id}`);
     return false;
   }
-
-  // Só envia se o WebSocket estiver aberto
   if (peer.ws.readyState !== peer.ws.OPEN) {
-    console.warn(`[PEERS] WebSocket de ${peer_id} não está aberto (estado: ${peer.ws.readyState})`);
+    console.warn(`[PEERS] WebSocket de ${peer_id} não está aberto`);
     return false;
   }
-
   peer.ws.send(JSON.stringify(message));
   return true;
 }
 
-// Retorna a lista de todos os peer_ids atualmente conectados.
-// Usado pela CLI para exibir vizinhos ativos.
-// Retorna: Array<string>
-function listPeers() {
-  return Array.from(connectedPeers.keys());
-}
+/**
+ * Persiste IPs de vizinhos no peers.json.
+ * Recebe um array de strings de IP (ex: ["10.1.2.3", "10.1.2.4"]).
+ * Não duplica entradas já existentes com o mesmo host.
+ * Só salva IPs que parecem válidos (não salva localhost ou IPs internos inválidos).
+ */
+function saveKnownPeers(ipList) {
+  if (!ipList || ipList.length === 0) return;
 
-// Retorna o mapa completo de peers conectados (para iteração interna).
-// Retorna: Map<peer_id, { ws, host, port }>
-function getConnectedPeers() {
-  return connectedPeers;
+  let config;
+  try {
+    config = JSON.parse(fs.readFileSync(PEERS_CONFIG_PATH, 'utf-8'));
+  } catch (e) {
+    console.error('[PEERS] Erro ao ler peers.json para persistir vizinhos:', e.message);
+    return;
+  }
+
+  const neighbors = config.neighbors || [];
+  const existingHosts = new Set(neighbors.map(n => n.host));
+
+  let changed = false;
+  for (const ip of ipList) {
+    const trimmed = (ip || '').trim();
+    // Ignora entradas vazias, localhost e IPs malformados
+    if (!trimmed || trimmed === 'localhost' || trimmed === '127.0.0.1') continue;
+    // Validação básica de IPv4
+    if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(trimmed)) continue;
+    if (existingHosts.has(trimmed)) continue;
+
+    neighbors.push({ host: trimmed, port: 8080 });
+    existingHosts.add(trimmed);
+    changed = true;
+    console.log(`[PEERS] Novo vizinho descoberto via HELLO: ${trimmed}`);
+  }
+
+  if (changed) {
+    config.neighbors = neighbors;
+    fs.writeFileSync(PEERS_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
+    console.log(`[PEERS] peers.json atualizado com ${neighbors.length} vizinho(s).`);
+  }
 }
 
 module.exports = {
@@ -101,8 +113,11 @@ module.exports = {
   registerPeer,
   removePeer,
   getPeer,
+  getSocket,
+  getPeerList,
   broadcast,
   sendTo,
   listPeers,
   getConnectedPeers,
+  saveKnownPeers,
 };

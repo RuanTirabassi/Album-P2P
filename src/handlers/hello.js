@@ -8,11 +8,12 @@
  *   "type": "HELLO",
  *   "message_id": "<uuid>",
  *   "sender_peer_id": "ALUNO-XX",
- *   "peers": ["ip1", "ip2"]   // opcional
+ *   "peers": ["ip1", "ip2"]   // opcional — lista de IPs conhecidos pelo remetente
  * }
  *
  * Comportamento:
  * - Registra o peer no mapa de vizinhos
+ * - Salva IPs recebidos no campo `peers` dentro de config/peers.json
  * - Responde com HELLO próprio (handshake bidirecional)
  */
 
@@ -20,28 +21,38 @@ const { v4: uuidv4 } = require('uuid');
 const peers = require('../peers');
 
 function handle(message, ws, config) {
-  const { sender_peer_id } = message;
+  const { sender_peer_id, peers: knownPeers } = message;
 
   console.log(`[HELLO] Recebido de ${sender_peer_id || 'desconhecido'}: ${JSON.stringify(message)}`);
 
   if (sender_peer_id) {
     peers.registerPeer(sender_peer_id, ws);
-    console.log(`[HELLO] Peer ${sender_peer_id} registrado com sucesso`);
+    console.log(`[HELLO] Peer ${sender_peer_id} registrado`);
   } else {
     console.log(`[HELLO] HELLO sem sender_peer_id — conexão ativa por host:port`);
   }
 
-  // Responde com HELLO próprio (handshake bidirecional — permite que o outro nos identifique)
+  // Salva IPs de vizinhos de 2º grau recebidos no campo `peers` do HELLO
+  if (Array.isArray(knownPeers) && knownPeers.length > 0) {
+    console.log(`[HELLO] ${sender_peer_id} informou ${knownPeers.length} vizinho(s) conhecido(s): ${knownPeers.join(', ')}`);
+    peers.saveKnownPeers(knownPeers);
+  }
+
+  // Responde com HELLO próprio incluindo lista dos nossos vizinhos conhecidos
+  const myNeighborIps = peers.getPeerList()
+    .map(p => p.host)
+    .filter(h => h && h !== 'null' && h !== 'localhost');
+
   const reply = {
-    type: 'HELLO',
-    message_id: uuidv4(),
+    type:           'HELLO',
+    message_id:     uuidv4(),
     sender_peer_id: config.self.peer_id,
-    peers: [],
+    peers:          myNeighborIps,
   };
 
   if (ws.readyState === ws.OPEN) {
     ws.send(JSON.stringify(reply));
-    console.log(`[HELLO] Respondido com HELLO para ${sender_peer_id}`);
+    console.log(`[HELLO] Respondido com HELLO para ${sender_peer_id} (${myNeighborIps.length} vizinho(s) compartilhado(s))`);
   }
 }
 
